@@ -4,10 +4,6 @@ import { authMiddleware, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
-/**
- * POST /posts
- * Create new post
- */
 router.post("/", authMiddleware, async (req: AuthRequest, res) => {
   try {
     const {
@@ -33,11 +29,10 @@ router.post("/", authMiddleware, async (req: AuthRequest, res) => {
         location: location?.name ?? null,
         lat: location?.lat ?? null,
         lng: location?.lng ?? null,
-        authorId: req.userId!, // JWT-аас
+        authorId: req.userId!,
       },
     });
 
-    // user.postsCount +1
     await prisma.user.update({
       where: { id: req.userId },
       data: { postsCount: { increment: 1 } },

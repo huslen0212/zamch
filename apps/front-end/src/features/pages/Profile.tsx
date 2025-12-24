@@ -10,10 +10,50 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { blogPosts } from '../../data/blogPosts';
+import { useEffect, useState } from 'react';
+
+interface Post {
+  id: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  image?: string;
+  location?: {
+    name: string;
+    lat: number;
+    lng: number;
+  };
+  createdAt: string;
+  readTime?: string;
+  date?: string; // UI дээр ашиглаж байгаа тул
+}
 
 export function Profile() {
   const { user, isAuthenticated } = useAuth();
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const token = localStorage.getItem('token');
+
+    fetch('http://localhost:3001/posts/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch posts');
+        return res.json();
+      })
+      .then((data) => {
+        setUserPosts(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        setUserPosts([]);
+      });
+  }, [isAuthenticated]);
 
   if (!isAuthenticated || !user) {
     return (
@@ -38,7 +78,6 @@ export function Profile() {
   }
 
   // Get user's posts (mock - in real app would filter by user.id)
-  const userPosts = blogPosts.slice(0, 3);
 
   // Calculate map position for user location
   const getMapPosition = (lat: number, lng: number) => {
