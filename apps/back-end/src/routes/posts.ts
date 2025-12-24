@@ -77,7 +77,7 @@ router.get('/', async (_req, res) => {
     });
 
     return res.json(
-      posts.map((post) => ({
+      posts.map((post : any) => ({
         id: post.id,
         image: post.imageUrl,
         category: post.category,
@@ -150,7 +150,7 @@ const categoryMeta: Record<string, any> = {
     };
 
     return res.json(
-      grouped.map((g) => ({
+      grouped.map((g : any) => ({
         name: g.category,
         count: g._count.category,
         ...categoryMeta[g.category],
@@ -178,7 +178,7 @@ router.get('/popular-destinations', async (_req, res) => {
     });
 
     return res.json(
-      posts.map((p) => ({
+      posts.map((p : any) => ({
         name: p.location || p.category,
         country: p.category,
         image: p.imageUrl,
@@ -226,7 +226,7 @@ router.get('/:id', async (req, res) => {
       category: post.category,
       image: post.imageUrl,
       createdAt: post.createdAt,
-      readTime: getRelativeTime(post.createdAt), 
+      readTime: getRelativeTime(post.createdAt),
       author: post.author.name,
       authorAvatar: post.author.avatar,
       authorBio: post.author.bio,
