@@ -12,6 +12,8 @@ interface Location {
   lng: number;
 }
 
+type MessageType = 'success' | 'error' | null;
+
 export function CreatePost() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -24,6 +26,9 @@ export function CreatePost() {
   const [locationName, setLocationName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<MessageType>(null);
 
   // Popular locations
   const popularLocations: Location[] = [
@@ -55,6 +60,8 @@ export function CreatePost() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setMessage(null);
+    setMessageType(null);
 
     try {
       const token = localStorage.getItem('token');
@@ -75,17 +82,25 @@ export function CreatePost() {
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const err = await res.json();
-        alert(err.message || 'Алдаа гарлаа');
+        setMessageType('error');
+        setMessage(data.message || 'Нийтлэл хадгалах үед алдаа гарлаа');
         return;
       }
 
-      alert('Нийтлэл амжилттай хадгалагдлаа!');
-      router.push('/profile');
+      setMessageType('success');
+      setMessage('🎉 Нийтлэл амжилттай хадгалагдлаа!');
+
+      // 1.5 секундийн дараа profile руу
+      setTimeout(() => {
+        router.push('/profile');
+      }, 1500);
     } catch (error) {
       console.error(error);
-      alert('Сервертэй холбогдож чадсангүй');
+      setMessageType('error');
+      setMessage('🚫 Сервертэй холбогдож чадсангүй');
     } finally {
       setSaving(false);
     }
@@ -139,6 +154,18 @@ export function CreatePost() {
 
       {/* Form */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {message && (
+          <div
+            className={`rounded-lg px-4 py-3 mb-6 text-sm font-medium ${
+              messageType === 'success'
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}
+          >
+            {message}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}

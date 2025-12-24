@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useEffect, useState } from 'react';
 
 interface Post {
-  id: string;
+  id: number;
   title: string;
   excerpt: string;
   category: string;
