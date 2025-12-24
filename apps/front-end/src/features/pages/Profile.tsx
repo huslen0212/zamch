@@ -1,8 +1,16 @@
-"use client";
-import Link from "next/link";
-import {BookOpen, Calendar, Edit, Globe, Heart, MapPin, Users} from "lucide-react";
-import {useAuth} from "../../context/AuthContext";
-import {blogPosts} from "../../data/blogPosts";
+'use client';
+import Link from 'next/link';
+import {
+  BookOpen,
+  Calendar,
+  Edit,
+  Globe,
+  Heart,
+  MapPin,
+  Users,
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { blogPosts } from '../../data/blogPosts';
 
 export function Profile() {
   const { user, isAuthenticated } = useAuth();
@@ -18,7 +26,8 @@ export function Profile() {
           <p className="text-gray-600 mb-6">
             Профайл харахын тулд эхлээд нэвтэрнэ үү
           </p>
-          <Link href="/login"
+          <Link
+            href="/login"
             className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Нэвтрэх
@@ -38,7 +47,9 @@ export function Profile() {
     return { x: `${x}%`, y: `${y}%` };
   };
 
-  const userLocationPos = user.location ? getMapPosition(user.location.lat, user.location.lng) : null;
+  const userLocationPos = user.location
+    ? getMapPosition(user.location.lat, user.location.lng)
+    : null;
 
   // Get all post locations for map
   const postLocations = userPosts
@@ -102,12 +113,16 @@ export function Profile() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Heart className="size-5 text-red-600" />
-                  <span className="text-gray-900">{user.totalLikes.toLocaleString()}</span>
+                  <span className="text-gray-900">
+                    {user.totalLikes.toLocaleString()}
+                  </span>
                   <span className="text-gray-600 text-sm">Таалагдсан</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="size-5 text-green-600" />
-                  <span className="text-gray-900">{user.followers.toLocaleString()}</span>
+                  <span className="text-gray-900">
+                    {user.followers.toLocaleString()}
+                  </span>
                   <span className="text-gray-600 text-sm">Дагагч</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -120,7 +135,9 @@ export function Profile() {
               {/* Join Date */}
               <div className="flex items-center gap-2 text-gray-500 text-sm">
                 <Calendar className="size-4" />
-                <span>Нэгдсэн: {new Date(user.joinDate).toLocaleDateString("mn-MN")}</span>
+                <span>
+                  Нэгдсэн: {new Date(user.joinDate).toLocaleDateString('mn-MN')}
+                </span>
               </div>
             </div>
           </div>
@@ -131,8 +148,11 @@ export function Profile() {
           {/* Posts Section */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl">Миний нийтлэлүүд ({userPosts.length})</h2>
-              <Link href="/create-post"
+              <h2 className="text-2xl">
+                Миний нийтлэлүүд ({userPosts.length})
+              </h2>
+              <Link
+                href="/create-post"
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Шинэ нийтлэл
@@ -170,7 +190,9 @@ export function Profile() {
                         <h3 className="text-xl mb-2 hover:text-blue-600 transition-colors">
                           {post.title}
                         </h3>
-                        <p className="text-gray-600 mb-4 line-clamp-2">{post.excerpt}</p>
+                        <p className="text-gray-600 mb-4 line-clamp-2">
+                          {post.excerpt}
+                        </p>
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <span>{post.date}</span>
                           <span>•</span>
@@ -184,8 +206,11 @@ export function Profile() {
             ) : (
               <div className="bg-white rounded-xl p-12 text-center">
                 <BookOpen className="size-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">Та одоогоор нийтлэл бичээгүй байна</p>
-                <Link href="/create-post"
+                <p className="text-gray-600 mb-4">
+                  Та одоогоор нийтлэл бичээгүй байна
+                </p>
+                <Link
+                  href="/create-post"
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Эхний нийтлэл бичих
@@ -220,7 +245,7 @@ export function Profile() {
                     style={{
                       top: userLocationPos.y,
                       left: userLocationPos.x,
-                      transform: "translate(-50%, -50%)",
+                      transform: 'translate(-50%, -50%)',
                     }}
                   >
                     <div className="relative">
@@ -242,7 +267,7 @@ export function Profile() {
                       style={{
                         top: pos.y,
                         left: pos.x,
-                        transform: "translate(-50%, -50%)",
+                        transform: 'translate(-50%, -50%)',
                       }}
                     >
                       <MapPin className="size-6 text-blue-600 fill-blue-600 drop-shadow-lg hover:scale-125 transition-transform cursor-pointer" />
@@ -255,7 +280,8 @@ export function Profile() {
               </div>
 
               <div className="p-4 bg-gray-50 border-t border-gray-200">
-                <Link href="/travel-map"
+                <Link
+                  href="/travel-map"
                   className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                 >
                   Бүтэн зураг харах
@@ -273,15 +299,21 @@ export function Profile() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Нийт таалагдсан</span>
-                  <span className="text-gray-900">{user.totalLikes.toLocaleString()}</span>
+                  <span className="text-gray-900">
+                    {user.totalLikes.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Дагагч</span>
-                  <span className="text-gray-900">{user.followers.toLocaleString()}</span>
+                  <span className="text-gray-900">
+                    {user.followers.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Дагаж байгаа</span>
-                  <span className="text-gray-900">{user.following.toLocaleString()}</span>
+                  <span className="text-gray-900">
+                    {user.following.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Аялсан улс</span>

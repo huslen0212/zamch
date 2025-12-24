@@ -8,12 +8,49 @@ datasource db {
 }
 
 model User {
+  id               String   @id @default(cuid())
+  name             String
+  email            String   @unique
+  password         String
+
+  // Profile info
+  avatar           String?
+  bio              String?
+
+  // Location
+  location         String?
+  lat              Float?
+  lng              Float?
+
+  // Stats
+  postsCount       Int      @default(0)
+  totalLikes       Int      @default(0)
+  followers        Int      @default(0)
+  following        Int      @default(0)
+  countriesVisited Int      @default(0)
+
+  posts            Post[]   // 👈 холбоо
+
+  createdAt        DateTime @default(now())
+}
+
+model Post {
   id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
+
+  title     String
+  excerpt   String
+  content   String
+  category  String
+
+  imageUrl  String
+
+  // Location
   location  String?
   lat       Float?
   lng       Float?
+
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+
   createdAt DateTime @default(now())
 }

@@ -30,15 +30,27 @@ router.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        location: location?.name ?? null,
-        lat: location?.lat ?? null,
-        lng: location?.lng ?? null,
-      },
-    });
+  data: {
+    name,
+    email,
+    password: hashedPassword,
+
+    avatar:
+      "https://images.unsplash.com/photo-1585624196654-d78397524a51?auto=format&fit=crop&w=256&q=80",
+    bio: "Шинэ хэрэглэгч",
+
+    location: location?.name ?? null,
+    lat: location?.lat ?? null,
+    lng: location?.lng ?? null,
+
+    postsCount: 0,
+    totalLikes: 0,
+    followers: 0,
+    following: 0,
+    countriesVisited: 0,
+  },
+});
+
 
     return res.status(201).json({
       success: true,
@@ -107,12 +119,22 @@ router.post("/login", async (req, res) => {
 router.get("/me", authMiddleware, async (req: AuthRequest, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      location: true,
-    },
+   select: {
+    id: true,
+    name: true,
+    email: true,
+    avatar: true,
+    bio: true,
+    location: true,
+    lat: true,
+    lng: true,
+    postsCount: true,
+    totalLikes: true,
+    followers: true,
+    following: true,
+    countriesVisited: true,
+    createdAt: true,
+}
   });
 
   if (!user) {

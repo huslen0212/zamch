@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Image as ImageIcon, MapPin, Save, X } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Image as ImageIcon, MapPin, Save, X } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 interface Location {
   name: string;
@@ -16,39 +16,79 @@ export function CreatePost() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
 
-  const [title, setTitle] = useState("");
-  const [excerpt, setExcerpt] = useState("");
-  const [content, setContent] = useState("");
-  const [category, setCategory] = useState("Далай");
+  const [title, setTitle] = useState('');
+  const [excerpt, setExcerpt] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('Далай');
   const [location, setLocation] = useState<Location | null>(null);
-  const [locationName, setLocationName] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [locationName, setLocationName] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Popular locations
   const popularLocations: Location[] = [
-    { name: "Мальдив", lat: 3.2028, lng: 73.2207 },
-    { name: "Парис", lat: 48.8566, lng: 2.3522 },
-    { name: "Токио", lat: 35.6762, lng: 139.6503 },
-    { name: "Нью-Йорк", lat: 40.7128, lng: -74.006 },
-    { name: "Лондон", lat: 51.5074, lng: -0.1278 },
-    { name: "Барселона", lat: 41.3851, lng: 2.1734 },
-    { name: "Бали", lat: -8.3405, lng: 115.092 },
-    { name: "Дубай", lat: 25.2048, lng: 55.2708 },
+    { name: 'Архангай', lat: 47.8971, lng: 100.724 },
+    { name: 'Баян-Өлгий', lat: 48.9683, lng: 89.9625 },
+    { name: 'Баянхонгор', lat: 46.1944, lng: 100.718 },
+    { name: 'Булган', lat: 48.8119, lng: 103.533 },
+    { name: 'Говь-Алтай', lat: 45.802, lng: 95.866 },
+    { name: 'Говьсүмбэр', lat: 46.36, lng: 108.356 },
+    { name: 'Дархан-Уул', lat: 49.486, lng: 105.922 },
+    { name: 'Дорноговь', lat: 44.419, lng: 109.001 },
+    { name: 'Дорнод', lat: 48.079, lng: 114.535 },
+    { name: 'Дундговь', lat: 45.582, lng: 106.764 },
+    { name: 'Завхан', lat: 48.238, lng: 96.07 },
+    { name: 'Орхон', lat: 49.027, lng: 104.044 },
+    { name: 'Өвөрхангай', lat: 46.263, lng: 102.775 },
+    { name: 'Өмнөговь', lat: 43.012, lng: 106.463 },
+    { name: 'Сүхбаатар', lat: 46.205, lng: 113.285 },
+    { name: 'Сэлэнгэ', lat: 50.242, lng: 106.207 },
+    { name: 'Төв', lat: 47.212, lng: 106.415 },
+    { name: 'Увс', lat: 49.644, lng: 93.273 },
+    { name: 'Ховд', lat: 48.005, lng: 91.642 },
+    { name: 'Хөвсгөл', lat: 49.63, lng: 100.162 },
+    { name: 'Хэнтий', lat: 47.608, lng: 109.938 },
   ];
 
-  const categories = ["Далай", "Уул", "Соёл", "Хот", "Адал явдал", "Байгаль"];
+  const categories = ['Говь цөл', 'Уул', 'Хангай', 'Нуур'];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
-    // Mock save - API-р орлуулах боломжтой
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem('token');
+
+      const res = await fetch('http://localhost:3001/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title,
+          excerpt,
+          content,
+          category,
+          imageUrl,
+          location,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.message || 'Алдаа гарлаа');
+        return;
+      }
+
+      alert('Нийтлэл амжилттай хадгалагдлаа!');
+      router.push('/profile');
+    } catch (error) {
+      console.error(error);
+      alert('Сервертэй холбогдож чадсангүй');
+    } finally {
       setSaving(false);
-      alert("Нийтлэл амжилттай хадгалагдлаа!");
-      router.push("/");
-    }, 1500);
+    }
   };
 
   if (!isAuthenticated) {
@@ -59,7 +99,9 @@ export function CreatePost() {
             <MapPin className="size-8 text-blue-600" />
           </div>
           <h2 className="text-2xl mb-4">Нэвтрэх шаардлагатай</h2>
-          <p className="text-gray-600 mb-6">Нийтлэл бичихийн тулд эхлээд нэвтэрнэ үү</p>
+          <p className="text-gray-600 mb-6">
+            Нийтлэл бичихийн тулд эхлээд нэвтэрнэ үү
+          </p>
           <Link
             href="/login"
             className="block w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -79,7 +121,9 @@ export function CreatePost() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl mb-2">Шинэ нийтлэл бичих</h1>
-              <p className="text-gray-600">Өөрийн аяллын түүхээ хуваалцаарай, {user?.name}</p>
+              <p className="text-gray-600">
+                Өөрийн аяллын түүхээ хуваалцаарай, {user?.name}
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <Link
@@ -129,7 +173,9 @@ export function CreatePost() {
                   placeholder="2-3 өгүүлбэрт нийтлэлийн агуулгыг товч танилцуулна уу..."
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none resize-none"
                 />
-                <div className="mt-2 text-sm text-gray-500 text-right">{excerpt.length} / 200</div>
+                <div className="mt-2 text-sm text-gray-500 text-right">
+                  {excerpt.length} / 200
+                </div>
               </div>
 
               {/* Content */}
@@ -150,7 +196,9 @@ export function CreatePost() {
 
               {/* Image */}
               <div className="bg-white rounded-xl shadow-md p-6">
-                <label className="block mb-2 text-gray-700">Үндсэн зураг *</label>
+                <label className="block mb-2 text-gray-700">
+                  Үндсэн зураг *
+                </label>
                 <div className="space-y-4">
                   <input
                     type="url"
@@ -161,10 +209,14 @@ export function CreatePost() {
                   />
                   {imageUrl ? (
                     <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
-                      <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <img
+                        src={imageUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
                       <button
                         type="button"
-                        onClick={() => setImageUrl("")}
+                        onClick={() => setImageUrl('')}
                         className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
                       >
                         <X className="size-4" />
@@ -192,7 +244,9 @@ export function CreatePost() {
                       type="button"
                       onClick={() => setCategory(cat)}
                       className={`px-3 py-2 rounded-lg text-sm transition-colors ${
-                        category === cat ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        category === cat
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
                       {cat}
@@ -214,7 +268,9 @@ export function CreatePost() {
                   placeholder="Газрын нэр"
                   className="w-full px-4 py-2 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none"
                 />
-                <div className="text-sm text-gray-600 mb-2">Алдартай газрууд:</div>
+                <div className="text-sm text-gray-600 mb-2">
+                  Алдартай газрууд:
+                </div>
                 <div className="space-y-1 max-h-48 overflow-y-auto">
                   {popularLocations.map((loc) => (
                     <button
@@ -225,7 +281,9 @@ export function CreatePost() {
                         setLocationName(loc.name);
                       }}
                       className={`w-full px-3 py-2 text-left text-sm rounded-lg transition-colors ${
-                        location?.name === loc.name ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"
+                        location?.name === loc.name
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'hover:bg-gray-50'
                       }`}
                     >
                       {loc.name}

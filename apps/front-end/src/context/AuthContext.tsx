@@ -8,15 +8,28 @@ import {
   useState,
 } from 'react';
 
+/* ================= USER TYPE ================= */
+
 export interface User {
   id: string;
   name: string;
   email: string;
+
+  avatar?: string;
+  bio?: string;
+
   location?: {
     name: string;
     lat: number;
     lng: number;
   };
+
+  postsCount: number;
+  totalLikes: number;
+  followers: number;
+  following: number;
+  countriesVisited: number;
+
   joinDate: string;
 }
 
@@ -38,10 +51,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/* ================= PROVIDER ================= */
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /* ========== RESTORE SESSION (REFRESH) ========== */
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -59,12 +75,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return res.json();
       })
       .then((data) => {
+        /* 🔥 7️⃣ USER MAPPING – ЭНД */
         setUser({
           id: data.id,
           name: data.name,
           email: data.email,
-          location: data.location,
-          joinDate: new Date().toISOString().split('T')[0],
+
+          avatar: data.avatar ?? undefined,
+          bio: data.bio ?? undefined,
+
+          location: data.location
+            ? {
+                name: data.location,
+                lat: data.lat,
+                lng: data.lng,
+              }
+            : undefined,
+
+          postsCount: data.postsCount ?? 0,
+          totalLikes: data.totalLikes ?? 0,
+          followers: data.followers ?? 0,
+          following: data.following ?? 0,
+          countriesVisited: data.countriesVisited ?? 0,
+
+          joinDate: data.createdAt,
         });
       })
       .catch(() => {
@@ -75,6 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       });
   }, []);
+
+  /* ================= LOGIN ================= */
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -95,20 +131,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem('token', data.token);
 
-      setUser({
-        id: data.user.id,
-        name: data.user.name,
-        email: data.user.email,
-        location: data.user.location,
-        joinDate: new Date().toISOString().split('T')[0],
-      });
-
+      // 🔑 login дараа бүрэн user авахын тулд /auth/me-г rely хийнэ
       return true;
     } catch (error) {
       console.error('LOGIN ERROR:', error);
       return false;
     }
   };
+
+  /* ================= REGISTER ================= */
 
   const register = async (
     name: string,
@@ -139,14 +170,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      setUser({
-        id: crypto.randomUUID(),
-        name,
-        email,
-        location,
-        joinDate: new Date().toISOString().split('T')[0],
-      });
-
       return { success: true };
     } catch (error) {
       console.error('REGISTER ERROR:', error);
@@ -156,6 +179,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
     }
   };
+
+  /* ================= LOGOUT ================= */
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -177,6 +202,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+/* ================= HOOK ================= */
 
 export function useAuth() {
   const context = useContext(AuthContext);
