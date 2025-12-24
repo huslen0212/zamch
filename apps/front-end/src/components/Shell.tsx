@@ -12,11 +12,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-white">
-      {!isAuth && <Header />}
+      <Header />
+      {/*{!isAuth && <Header />}*/}
       {!isAuth && <PageNav />}
       {!isAuth && pathname !== "/" && <Breadcrumb />}
       <main>{children}</main>
-      {!isAuth && <Footer />}
+      {/*{!isAuth && <Footer />}*/}
+      <Footer />
     </div>
   );
 }

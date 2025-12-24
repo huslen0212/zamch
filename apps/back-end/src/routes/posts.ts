@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import prisma from '../prisma';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { Prisma } from '@prisma/client';
 
 const router = Router();
 
@@ -20,15 +21,70 @@ function getRelativeTime(date: Date): string {
   if (hours < 24) return `${hours} цагийн өмнө`;
   return `${days} өдрийн өмнө`;
 }
+const AIMAGS = new Set<string>([
+  'Архангай','Баян-Өлгий','Баянхонгор','Булган','Говь-Алтай','Говьсүмбэр',
+  'Дархан-Уул','Дорноговь','Дорнод','Дундговь','Завхан','Орхон','Өвөрхангай',
+  'Өмнөговь','Сүхбаатар','Сэлэнгэ','Төв','Увс','Ховд','Хөвсгөл','Хэнтий',
+]);
 
+type LocationBody =
+  | string
+  | { name: string; lat?: number | string; lng?: number | string }
+  | null
+  | undefined;
+
+function toNumberOrNull(v: unknown): number | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  if (typeof v === 'string') {
+    const n = Number(v.trim());
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function parseLocation(location: LocationBody): {
+  name: string | null;
+  lat: number | null;
+  lng: number | null;
+} {
+  if (!location) return { name: null, lat: null, lng: null };
+
+  if (typeof location === 'string') {
+    const name = location.trim();
+    return { name: name || null, lat: null, lng: null };
+  }
+
+  const name = String(location.name ?? '').trim() || null;
+  const lat = toNumberOrNull(location.lat);
+  const lng = toNumberOrNull(location.lng);
+
+  return { name, lat, lng };
+}
+
+async function recalcVisitedAimagsCount(
+  tx: Prisma.TransactionClient,
+  userId: string
+) {
+  // groupBy-оос илүү найдвартай: distinct ашиглая
+  const distinctLocs = await tx.post.findMany({
+    where: { authorId: userId, location: { not: null } },
+    distinct: ['location'],
+    select: { location: true },
+  });
+
+  const visited = distinctLocs
+    .map((r : any) => (r.location ?? '').trim())
+    .filter((name : string) => AIMAGS.has(name));
+
+  return visited.length;
+}
 /* =========================================
    CREATE POST
 ========================================= */
 router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   try {
-    if (!req.userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
+    if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
 
     const { title, excerpt, content, category, imageUrl, location } = req.body;
 
@@ -36,32 +92,57 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
       return res.status(400).json({ message: 'Мэдээлэл дутуу байна' });
     }
 
-    const post = await prisma.post.create({
-      data: {
-        title,
-        excerpt,
-        content,
-        category,
-        imageUrl,
-        location: location?.name ?? null,
-        lat: location?.lat ?? null,
-        lng: location?.lng ?? null,
-        authorId: req.userId,
-      },
-    });
+    const loc = parseLocation(location as LocationBody);
 
-    await prisma.user.update({
-      where: { id: req.userId },
-      data: { postsCount: { increment: 1 } },
+    const post = await prisma.$transaction(async (tx) => {
+      const created = await tx.post.create({
+        data: {
+          title,
+          excerpt,
+          content,
+          category,
+          imageUrl,
+          location: loc.name,
+          lat: loc.lat,
+          lng: loc.lng,
+          authorId: req.userId!,
+        },
+      });
+
+      // postsCount-г бодитоор нь (найдвартай)
+      const postsCount = await tx.post.count({ where: { authorId: req.userId! } });
+
+      // countriesVisited (dedup 21 аймаг)
+      let countriesVisited: number | null = null;
+      try {
+        countriesVisited = await recalcVisitedAimagsCount(tx, req.userId!);
+      } catch (e) {
+        console.error('VISITED AIMAGS CALC ERROR:', e);
+        // энд алдаа гарлаа ч пост үүсгэснийг буцааж болно
+      }
+
+      await tx.user.update({
+        where: { id: req.userId! },
+        data: {
+          postsCount,
+          ...(typeof countriesVisited === 'number' ? { countriesVisited } : {}),
+        },
+      });
+
+      return created;
     });
 
     return res.status(201).json(post);
   } catch (error) {
     console.error('CREATE POST ERROR:', error);
-    return res.status(500).json({ message: 'Server error' });
+
+    // DEV үед алдааны message-г гаргаад debug хийхэд амар
+    const msg =
+      error instanceof Error ? error.message : 'Server error';
+
+    return res.status(500).json({ message: msg });
   }
 });
-
 /* =========================================
    GET ALL POSTS (HOME PAGE)
 ========================================= */
@@ -70,14 +151,12 @@ router.get('/', async (_req, res) => {
     const posts = await prisma.post.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        author: {
-          select: { name: true },
-        },
+        author: { select: { name: true } },
       },
     });
 
     return res.json(
-      posts.map((post : any) => ({
+      posts.map((post: any) => ({
         id: post.id,
         image: post.imageUrl,
         category: post.category,
@@ -99,9 +178,7 @@ router.get('/', async (_req, res) => {
 ========================================= */
 router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
   try {
-    if (!req.userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
+    if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
 
     const posts = await prisma.post.findMany({
       where: { authorId: req.userId },
@@ -114,6 +191,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 /* ======================================================
    CATEGORIES WITH COUNT

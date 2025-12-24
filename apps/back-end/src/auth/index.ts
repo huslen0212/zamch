@@ -143,5 +143,89 @@ router.get("/me", authMiddleware, async (req: AuthRequest, res) => {
 
   return res.json(user);
 });
+router.patch("/me", authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { name, bio, avatar, location, lat, lng } = req.body;
+
+    // ---- helper: empty string -> null
+    const strOrNull = (v: any) => {
+      if (v === undefined) return undefined; // update хийхгүй
+      if (v === null) return null;
+      const s = String(v).trim();
+      return s === "" ? null : s;
+    };
+
+    // ---- helper: number parse (allow null)
+    const numOrNull = (v: any) => {
+      if (v === undefined) return undefined; // update хийхгүй
+      if (v === null || String(v).trim() === "") return null;
+      const n = Number(v);
+      if (!Number.isFinite(n)) return undefined; // буруу тоо бол update хийхгүй
+      return n;
+    };
+
+    // ямар нэг field ирээгүй бол
+    if (
+      name === undefined &&
+      bio === undefined &&
+      avatar === undefined &&
+      location === undefined &&
+      lat === undefined &&
+      lng === undefined
+    ) {
+      return res.status(400).json({ message: "Шинэчлэх мэдээлэл алга байна" });
+    }
+
+    // update payload (undefined бол prisma update хийхгүй)
+    const data: any = {};
+
+    const nameVal = strOrNull(name);
+    const bioVal = strOrNull(bio);
+    const avatarVal = strOrNull(avatar);
+    const locVal = strOrNull(location);
+    const latVal = numOrNull(lat);
+    const lngVal = numOrNull(lng);
+
+    // name-г хоосон болгохыг зөвшөөрөхгүй (сонголтоор)
+    if (nameVal !== undefined) {
+      if (nameVal === null) {
+        return res.status(400).json({ message: "Нэр хоосон байж болохгүй" });
+      }
+      data.name = nameVal;
+    }
+
+    if (bioVal !== undefined) data.bio = bioVal;
+    if (avatarVal !== undefined) data.avatar = avatarVal;
+    if (locVal !== undefined) data.location = locVal;
+    if (latVal !== undefined) data.lat = latVal;
+    if (lngVal !== undefined) data.lng = lngVal;
+
+    const updated = await prisma.user.update({
+      where: { id: req.userId },
+      data,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        bio: true,
+        location: true,
+        lat: true,
+        lng: true,
+        postsCount: true,
+        totalLikes: true,
+        followers: true,
+        following: true,
+        countriesVisited: true,
+        createdAt: true,
+      },
+    });
+
+    return res.json(updated);
+  } catch (error) {
+    console.error("UPDATE ME ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
 
 export default router;
