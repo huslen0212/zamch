@@ -10,7 +10,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
-
+  console.log(user)
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
