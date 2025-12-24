@@ -26,6 +26,8 @@ interface BlogPostType {
   author: string;
   authorAvatar?: string;
   authorBio?: string;
+  likeCount: number;
+  likedByMe: boolean;
 }
 
 export function BlogPost({ postId }: { postId: number }) {
@@ -41,14 +43,19 @@ export function BlogPost({ postId }: { postId: number }) {
   useEffect(() => {
     setLoading(true);
 
-    fetch(`http://localhost:3001/posts/${postId}`)
+    fetch(`http://localhost:3001/posts/${postId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
+      },
+    })
       .then((res) => {
         if (!res.ok) throw new Error('Post not found');
         return res.json();
       })
       .then((data) => {
         setPost(data);
-        setLikes(0);
+        setLikes(typeof data.likesCount === 'number' ? data.likesCount : 0);
+        setIsLiked(Boolean(data.likedByMe));
       })
       .catch(() => setPost(null))
       .finally(() => setLoading(false));
@@ -72,9 +79,19 @@ export function BlogPost({ postId }: { postId: number }) {
 
   const readTime = Math.max(1, Math.ceil(post.content.length / 1000));
 
-  const handleLike = () => {
-    setLikes((prev) => (isLiked ? prev - 1 : prev + 1));
-    setIsLiked((v) => !v);
+  const handleLike = async () => {
+    const res = await fetch(`http://localhost:3001/posts/${post.id}/like`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+    setIsLiked(data.liked);
+    setLikes((prev) => (data.liked ? prev + 1 : prev - 1));
   };
 
   return (
@@ -148,7 +165,7 @@ export function BlogPost({ postId }: { postId: number }) {
                 }`}
               >
                 <Heart className={`size-5 ${isLiked ? 'fill-red-600' : ''}`} />
-                <span>{likes}</span>
+                <span>{Number.isFinite(likes) ? likes : 0}</span>
               </button>
 
               <button

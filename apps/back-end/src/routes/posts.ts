@@ -193,7 +193,7 @@ router.get('/popular-destinations', async (_req, res) => {
 /* =========================================
    SINGLE POST
 ========================================= */
-router.get('/:id', async (req, res) => {
+router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const id = Number(req.params.id);
 
@@ -211,12 +211,17 @@ router.get('/:id', async (req, res) => {
             bio: true,
           },
         },
+        likes: true,
       },
     });
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
+
+    const likedByMe = req.userId
+      ? post.likes.some((like) => like.userId === req.userId)
+      : false;
 
     return res.json({
       id: post.id,
@@ -227,14 +232,19 @@ router.get('/:id', async (req, res) => {
       image: post.imageUrl,
       createdAt: post.createdAt,
       readTime: getRelativeTime(post.createdAt),
+
       author: post.author.name,
       authorAvatar: post.author.avatar,
       authorBio: post.author.bio,
+
+      likesCount: post.likes.length,
+      likedByMe,
     });
   } catch (error) {
     console.error('GET POST ERROR:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 export default router;

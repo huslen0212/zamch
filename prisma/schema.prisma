@@ -29,7 +29,8 @@ model User {
   following        Int @default(0)
   countriesVisited Int @default(0)
 
-  posts Post[] // 👈 холбоо
+  posts Post[]
+  likes PostLike[]
 
   createdAt DateTime @default(now())
 }
@@ -52,5 +53,19 @@ model Post {
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
 
+  likes PostLike[]
+
   createdAt DateTime @default(now())
+}
+
+model PostLike {
+  id Int @id @default(autoincrement())
+
+  userId String
+  postId Int
+
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId])
 }
