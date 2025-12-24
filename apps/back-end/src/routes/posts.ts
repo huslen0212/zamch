@@ -115,6 +115,81 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+/* ======================================================
+   CATEGORIES WITH COUNT
+   GET /posts/categories
+====================================================== */
+router.get('/categories/list', async (_req, res) => {
+  try {
+    const grouped = await prisma.post.groupBy({
+      by: ['category'],
+      _count: { category: true },
+    });
+
+const categoryMeta: Record<string, any> = {
+      'Говь цөл': {
+        description: 'Алтан шаргал элсэн манхан, тэмээн сүрэг болон үлэг гүрвэлийн өлгий нутаг',
+        image:
+          'https://images.unsplash.com/photo-1547101133-1463999994c9',
+      },
+      'Уул': {
+        description: 'Цастай оргил, сүрлэг хад асга бүхий өндөр уулсын гайхамшиг',
+        image:
+          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b',
+      },
+      'Хангай': {
+        description: 'Өвс ургамал тэгш, ой мод болон гол горхи хосолсон байгалийн үзэсгэлэн',
+        image:
+          'https://images.unsplash.com/photo-1441974231531-c6227db76b6e',
+      },
+      'Нуур': {
+        description: 'Хөх сувд шиг тунгалаг нуурууд, усны шувууд болон амгалан тайван орчин',
+        image:
+          'https://images.unsplash.com/photo-1501785888041-af3ef285b470',
+      },
+    };
+
+    return res.json(
+      grouped.map((g) => ({
+        name: g.category,
+        count: g._count.category,
+        ...categoryMeta[g.category],
+      }))
+    );
+  } catch (e) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* ======================================================
+   POPULAR DESTINATIONS
+   GET /posts/popular-destinations
+====================================================== */
+router.get('/popular-destinations', async (_req, res) => {
+  try {
+    const posts = await prisma.post.findMany({
+      take: 6,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        category: true,
+        imageUrl: true,
+        location: true,
+      },
+    });
+
+    return res.json(
+      posts.map((p) => ({
+        name: p.location || p.category,
+        country: p.category,
+        image: p.imageUrl,
+      }))
+    );
+  } catch (e) {
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 /* =========================================
    SINGLE POST
 ========================================= */
