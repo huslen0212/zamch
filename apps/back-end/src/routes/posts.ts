@@ -4,7 +4,26 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// create post
+/* =========================================
+   Helper: Relative time
+========================================= */
+function getRelativeTime(date: Date): string {
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+
+  const minutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (minutes < 1) return 'Дөнгөж сая';
+  if (minutes < 60) return `${minutes} минутын өмнө`;
+  if (hours < 24) return `${hours} цагийн өмнө`;
+  return `${days} өдрийн өмнө`;
+}
+
+/* =========================================
+   CREATE POST
+========================================= */
 router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   try {
     if (!req.userId) {
@@ -43,7 +62,41 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
-// my posts
+/* =========================================
+   GET ALL POSTS (HOME PAGE)
+========================================= */
+router.get('/', async (_req, res) => {
+  try {
+    const posts = await prisma.post.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: {
+          select: { name: true },
+        },
+      },
+    });
+
+    return res.json(
+      posts.map((post) => ({
+        id: post.id,
+        image: post.imageUrl,
+        category: post.category,
+        title: post.title,
+        excerpt: post.excerpt,
+        author: post.author.name,
+        date: post.createdAt,
+        readTime: getRelativeTime(post.createdAt),
+      }))
+    );
+  } catch (error) {
+    console.error('FETCH POSTS ERROR:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/* =========================================
+   MY POSTS
+========================================= */
 router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
   try {
     if (!req.userId) {
@@ -62,7 +115,9 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
-// single post
+/* =========================================
+   SINGLE POST
+========================================= */
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -96,6 +151,7 @@ router.get('/:id', async (req, res) => {
       category: post.category,
       image: post.imageUrl,
       createdAt: post.createdAt,
+      readTime: getRelativeTime(post.createdAt), 
       author: post.author.name,
       authorAvatar: post.author.avatar,
       authorBio: post.author.bio,
