@@ -1,14 +1,14 @@
-import express from 'express';
-
-const host = process.env.HOST ?? 'localhost';
-const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+import express from "express";
+import cors from "cors";
+import authRoutes from "./auth"; 
 
 const app = express();
 
-app.get('/', (req, res) => {
-  res.send({ message: 'Hello API' });
-});
+app.use(cors({ origin: "http://localhost:3000" }));
+app.use(express.json());
 
-app.listen(port, host, () => {
-  console.log(`[ ready ] http://${host}:${port}`);
+app.use("/auth", authRoutes);
+
+app.listen(3001, () => {
+  console.log("🚀 Backend running on http://localhost:3001");
 });

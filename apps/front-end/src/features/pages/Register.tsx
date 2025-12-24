@@ -1,38 +1,51 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { Mail, Lock, Eye, EyeOff, User, AlertCircle, CheckCircle, MapPin } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
+  AlertCircle,
+  CheckCircle,
+  MapPin,
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export function Register() {
   const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [locationName, setLocationName] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState<{ name: string; lat: number; lng: number } | null>(null);
+  const [locationName, setLocationName] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState<{
+    name: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   const { register } = useAuth();
 
   const popularLocations = useMemo(
     () => [
-      { name: "Улаанбаатар", lat: 47.8864, lng: 106.9057 },
-      { name: "Токио", lat: 35.6762, lng: 139.6503 },
-      { name: "Нью-Йорк", lat: 40.7128, lng: -74.006 },
-      { name: "Лондон", lat: 51.5074, lng: -0.1278 },
-      { name: "Парис", lat: 48.8566, lng: 2.3522 },
-      { name: "Сеул", lat: 37.5665, lng: 126.978 },
-      { name: "Дубай", lat: 25.2048, lng: 55.2708 },
-      { name: "Сингапур", lat: 1.3521, lng: 103.8198 },
+      { name: 'Улаанбаатар', lat: 47.8864, lng: 106.9057 },
+      { name: 'Токио', lat: 35.6762, lng: 139.6503 },
+      { name: 'Нью-Йорк', lat: 40.7128, lng: -74.006 },
+      { name: 'Лондон', lat: 51.5074, lng: -0.1278 },
+      { name: 'Парис', lat: 48.8566, lng: 2.3522 },
+      { name: 'Сеул', lat: 37.5665, lng: 126.978 },
+      { name: 'Дубай', lat: 25.2048, lng: 55.2708 },
+      { name: 'Сингапур', lat: 1.3521, lng: 103.8198 },
     ],
-    []
+    [],
   );
 
   const filteredLocations = useMemo(() => {
@@ -43,36 +56,40 @@ export function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
 
     if (password !== confirmPassword) {
-      setError("Нууц үг таарахгүй байна");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Нууц үг 6-аас дээш тэмдэгт байх ёстой");
+      setError('Нууц үг таарахгүй байна');
       return;
     }
 
     setLoading(true);
 
-    try {
-      const success = await register(name, email, password, selectedLocation || undefined);
-      if (success) {
-        router.push("/");
-      } else {
-        setError("Бүртгэл амжилтгүй боллоо");
-      }
-    } catch {
-      setError("Алдаа гарлаа. Дахин оролдоно уу.");
-    } finally {
-      setLoading(false);
+    const result = await register(
+      name,
+      email,
+      password,
+      selectedLocation || undefined,
+    );
+
+    if (result.success) {
+      router.push('/');
+    } else {
+      // 🔥 backend-ээс ирсэн алдаа энд харагдана
+      setError(result.message);
     }
+
+    setLoading(false);
   };
 
   const passwordStrength =
-    password.length >= 8 ? "Хүчтэй" : password.length >= 6 ? "Дундаж" : password.length > 0 ? "Сул" : "";
+    password.length >= 8
+      ? 'Хүчтэй'
+      : password.length >= 6
+        ? 'Дундаж'
+        : password.length > 0
+          ? 'Сул'
+          : '';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center px-4 py-12">
@@ -98,7 +115,10 @@ export function Register() {
 
             {/* Name */}
             <div>
-              <label htmlFor="name" className="block text-sm mb-2 text-gray-700">
+              <label
+                htmlFor="name"
+                className="block text-sm mb-2 text-gray-700"
+              >
                 Нэр
               </label>
               <div className="relative">
@@ -117,7 +137,10 @@ export function Register() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm mb-2 text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm mb-2 text-gray-700"
+              >
                 И-мэйл хаяг
               </label>
               <div className="relative">
@@ -136,7 +159,9 @@ export function Register() {
 
             {/* Location */}
             <div>
-              <label className="block text-sm mb-2 text-gray-700">Байршил</label>
+              <label className="block text-sm mb-2 text-gray-700">
+                Байршил
+              </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-3 size-5 text-gray-400" />
                 <input
@@ -164,11 +189,13 @@ export function Register() {
                       }}
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-left ${
                         isSelected
-                          ? "border-purple-600 bg-purple-50"
-                          : "border-gray-200 hover:bg-gray-50"
+                          ? 'border-purple-600 bg-purple-50'
+                          : 'border-gray-200 hover:bg-gray-50'
                       }`}
                     >
-                      <MapPin className={`size-4 ${isSelected ? "text-purple-600" : "text-gray-400"}`} />
+                      <MapPin
+                        className={`size-4 ${isSelected ? 'text-purple-600' : 'text-gray-400'}`}
+                      />
                       <span className="text-sm text-gray-800">{loc.name}</span>
                     </button>
                   );
@@ -178,14 +205,17 @@ export function Register() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm mb-2 text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm mb-2 text-gray-700"
+              >
                 Нууц үг
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
                 <input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -198,21 +228,27 @@ export function Register() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   aria-label="Toggle password visibility"
                 >
-                  {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                  {showPassword ? (
+                    <EyeOff className="size-5" />
+                  ) : (
+                    <Eye className="size-5" />
+                  )}
                 </button>
               </div>
 
               {passwordStrength && (
                 <div className="mt-2 flex items-center gap-2 text-sm">
-                  <CheckCircle className={`size-4 ${password.length >= 6 ? "text-green-600" : "text-gray-400"}`} />
+                  <CheckCircle
+                    className={`size-4 ${password.length >= 6 ? 'text-green-600' : 'text-gray-400'}`}
+                  />
                   <span className="text-gray-600">Нууц үгийн хүч: </span>
                   <span
                     className={`$${
-                      passwordStrength === "Хүчтэй"
-                        ? "text-green-600"
-                        : passwordStrength === "Дундаж"
-                          ? "text-yellow-600"
-                          : "text-red-600"
+                      passwordStrength === 'Хүчтэй'
+                        ? 'text-green-600'
+                        : passwordStrength === 'Дундаж'
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
                     }`}
                   >
                     {passwordStrength}
@@ -223,14 +259,17 @@ export function Register() {
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm mb-2 text-gray-700">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm mb-2 text-gray-700"
+              >
                 Нууц үг давтах
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
                 <input
                   id="confirmPassword"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -261,7 +300,10 @@ export function Register() {
 
           <div className="text-center mt-6">
             <span className="text-gray-600">Аль хэдийн бүртгэлтэй юу? </span>
-            <Link href="/login" className="text-purple-600 hover:text-purple-700">
+            <Link
+              href="/login"
+              className="text-purple-600 hover:text-purple-700"
+            >
               Нэвтрэх
             </Link>
           </div>
