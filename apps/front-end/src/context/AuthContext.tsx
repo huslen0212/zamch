@@ -1,5 +1,12 @@
 'use client';
-import { createContext, type ReactNode, useContext, useState } from 'react';
+
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 export interface User {
   id: string;
@@ -18,6 +25,7 @@ type RegisterResult = { success: true } | { success: false; message: string };
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (
     name: string,
@@ -32,9 +40,74 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = async (): Promise<boolean> => {
-    return false;
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    fetch('http://localhost:3001/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Unauthorized');
+        return res.json();
+      })
+      .then((data) => {
+        setUser({
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          location: data.location,
+          joinDate: new Date().toISOString().split('T')[0],
+        });
+      })
+      .catch(() => {
+        localStorage.removeItem('token');
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const res = await fetch('http://localhost:3001/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error('LOGIN FAILED:', data);
+        return false;
+      }
+
+      localStorage.setItem('token', data.token);
+
+      setUser({
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        location: data.user.location,
+        joinDate: new Date().toISOString().split('T')[0],
+      });
+
+      return true;
+    } catch (error) {
+      console.error('LOGIN ERROR:', error);
+      return false;
+    }
   };
 
   const register = async (
@@ -60,7 +133,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
-        // 🔥 BACKEND-ийн алдааг frontend-д дамжуулна
         return {
           success: false,
           message: data.message || 'Бүртгэл амжилтгүй боллоо',
@@ -86,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
     setUser(null);
   };
 
@@ -94,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        loading,
         login,
         register,
         logout,
