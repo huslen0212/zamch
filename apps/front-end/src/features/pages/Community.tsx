@@ -1,9 +1,19 @@
 'use client';
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Globe, Instagram, MessageCircle, MapPin, UserPlus, UserCheck } from 'lucide-react';
+import {
+  Globe,
+  Instagram,
+  MessageCircle,
+  MapPin,
+  UserPlus,
+  UserCheck,
+  Users,
+  Sparkles,
+  TrendingUp,
+  Award,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { TravelBlogLoader } from '@/components/Loader';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -17,18 +27,11 @@ interface Traveler {
   title: string;
   countriesVisited: number;
   postsCount: number;
-
-  // backend-ээс аль нь ч ирж магадгүй тул хоёуланг нь дэмжив
   followers?: number;
   followersCount?: number;
-
   bio: string;
   recentPhoto: string;
-
-  // backend-ээс token-оор шүүж ирж болно
   followedByMe?: boolean;
-
-  // optional
   location?: { name: string; lat?: number; lng?: number } | string | null;
 }
 
@@ -44,14 +47,15 @@ function formatK(n: number) {
   return `${v.toFixed(v >= 10 ? 0 : 1)}K`;
 }
 
+
 export function Community() {
-  const router = useRouter();
+  const { user } = useAuth();
+  const myId = user?.id != null ? String(user.id) : null;
 
   const [travelers, setTravelers] = useState<Traveler[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // follow request давхар дарах хамгаалалт
   const pendingFollow = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -100,7 +104,7 @@ export function Community() {
   const requireAuth = () => {
     const token = getTokenSafe();
     if (!token) {
-      router.push('/login');
+      window.location.href = '/login';
       return false;
     }
     return true;
@@ -118,13 +122,17 @@ export function Community() {
     if (!requireAuth()) return;
 
     const idStr = String(travelerId);
-    if (pendingFollow.current[idStr]) return; // давхар request явуулахгүй
+
+    // ✅ ӨӨРИЙГӨӨ ДАГАХЫГ ХОРИГЛОНО
+    if (myId && idStr === myId) return;
+
+    if (pendingFollow.current[idStr]) return;
     pendingFollow.current[idStr] = true;
 
-    // optimistic update
     let prevFollowed = false;
     let prevFollowers = 0;
 
+    // optimistic update
     setTravelers((prev) =>
       prev.map((t) => {
         if (String(t.id) !== idStr) return t;
@@ -160,7 +168,6 @@ export function Community() {
 
       const data = await res.json().catch(() => ({} as any));
 
-      // серверээс бодит төлөв/тоо ирвэл sync хийнэ
       setTravelers((prev) =>
         prev.map((t) => {
           if (String(t.id) !== idStr) return t;
@@ -184,7 +191,7 @@ export function Community() {
         }),
       );
     } catch {
-      // revert
+      // rollback
       setTravelers((prev) =>
         prev.map((t) => {
           if (String(t.id) !== idStr) return t;
@@ -205,13 +212,16 @@ export function Community() {
 
   if (errorMsg) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-xl shadow p-6 max-w-md w-full text-center">
-          <p className="text-red-600 font-medium mb-2">Алдаа гарлаа</p>
-          <p className="text-gray-600">{errorMsg}</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="mx-auto size-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <p className="text-red-600 font-bold text-xl mb-2">Алдаа гарлаа</p>
+          <p className="text-gray-600 mb-6">{errorMsg}</p>
           <button
             onClick={() => location.reload()}
-            className="mt-5 px-5 py-2.5 bg-gray-900 text-white rounded-lg"
+            className="px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all transform hover:scale-105"
           >
             Дахин оролдох
           </button>
@@ -221,127 +231,214 @@ export function Community() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero */}
-      <section className="relative h-[400px] flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
+      {/* Hero - Enhanced */}
+      <section className="relative h-[480px] flex items-center justify-center overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1756228808949-34a47cd1b457"
           className="absolute inset-0 w-full h-full object-cover"
           alt="Community hero"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/80 to-blue-600/80" />
-        <div className="relative z-10 text-white text-center px-4">
-          <h1 className="text-5xl mb-4">Аялагч</h1>
-          <p className="text-xl">Монгол даяарх аялагч нартай холбогдоорой</p>
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-700/85 via-blue-700/75 to-indigo-700/85" />
+
+        {/* Animated background */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-20 left-20 w-96 h-96 bg-white/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl animate-pulse delay-700" />
+        </div>
+
+        <div className="relative z-10 text-white text-center px-4 max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-5 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-6 border border-white/30">
+            <Users className="size-4 animate-pulse" />
+            <span className="text-sm font-medium">{travelers.length} идэвхтэй гишүүн</span>
+          </div>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">Аялагчид</h1>
+          <p className="text-xl md:text-2xl text-purple-100 leading-relaxed">
+            Монгол даяарх аялагч нартай холбогдоорой
+          </p>
         </div>
       </section>
 
-      {/* Travelers */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
-          {travelers.map((traveler) => {
-            const followersNum = getFollowersNumber(traveler);
-            const isFollowed = Boolean(traveler.followedByMe);
+      {/* Travelers Grid - Enhanced */}
+      <section className="py-20 -mt-16 relative z-10">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {travelers.map((traveler) => {
+              const followersNum = getFollowersNumber(traveler);
+              const isFollowed = Boolean(traveler.followedByMe);
+              const isMe = myId && String(traveler.id) === myId;
 
-            return (
-              <article
-                key={String(traveler.id)}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                <Link href={toProfileHref(traveler.id)} className="block">
-                  <div className="h-48 overflow-hidden">
-                    <img
-                      src={traveler.recentPhoto}
-                      className="w-full h-full object-cover"
-                      alt={traveler.name}
-                    />
-                  </div>
-                </Link>
-
-                <div className="relative px-6">
-                  <Link href={toProfileHref(traveler.id)} className="inline-block">
-                    <img
-                      src={traveler.avatar}
-                      className="size-20 rounded-full border-4 border-white -mt-10 object-cover hover:scale-[1.02] transition-transform"
-                      alt={traveler.name}
-                    />
-                  </Link>
-                </div>
-
-                <div className="p-6 pt-2">
-                  <Link href={toProfileHref(traveler.id)} className="block">
-                    <h3 className="text-xl hover:text-blue-600 transition-colors">
-                      {traveler.name}
-                    </h3>
-                  </Link>
-
-                  <p className="text-blue-600 text-sm mb-2">{traveler.title}</p>
-
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{traveler.bio}</p>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 text-center border-y py-4 mb-4">
-                    <div>
-                      <div className="text-xl">{traveler.countriesVisited ?? 0}</div>
-                      <div className="text-xs text-gray-500">Орон</div>
+              return (
+                <article
+                  key={String(traveler.id)}
+                  className="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100"
+                >
+                  {/* Cover Image */}
+                  <a href={toProfileHref(traveler.id)} className="block relative">
+                    <div className="h-48 overflow-hidden relative">
+                      <img
+                        src={traveler.recentPhoto}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        alt={traveler.name}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     </div>
-                    <div>
-                      <div className="text-xl">{traveler.postsCount ?? 0}</div>
-                      <div className="text-xs text-gray-500">Нийтлэл</div>
-                    </div>
-                    <div>
-                      <div className="text-xl">{formatK(followersNum)}</div>
-                      <div className="text-xs text-gray-500">Дагагч</div>
-                    </div>
+                  </a>
+
+                  {/* Avatar */}
+                  <div className="relative px-6">
+                    <a href={toProfileHref(traveler.id)} className="inline-block">
+                      <div className="relative">
+                        <img
+                          src={traveler.avatar}
+                          className="size-20 rounded-full border-4 border-white -mt-10 object-cover hover:scale-110 transition-transform shadow-xl ring-4 ring-gray-100"
+                          alt={traveler.name}
+                        />
+                        {traveler.countriesVisited > 10 && (
+                          <div className="absolute -bottom-1 -right-1 p-1.5 bg-yellow-500 rounded-full border-2 border-white">
+                            <Award className="size-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                    </a>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleFollow(traveler.id)}
-                      className={`flex-1 px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                        isFollowed
-                          ? 'bg-gray-200 text-gray-800'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
-                      {isFollowed ? <UserCheck className="size-5" /> : <UserPlus className="size-5" />}
-                      {isFollowed ? 'Дагаж байна' : 'Дагах'}
-                    </button>
+                  {/* Content */}
+                  <div className="p-6 pt-2">
+                    <a href={toProfileHref(traveler.id)} className="block">
+                      <h3 className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors mb-1">
+                        {traveler.name}
+                      </h3>
+                    </a>
 
-                    <button
-                      onClick={() => router.push(toProfileHref(traveler.id))}
-                      className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                      aria-label="Профайл"
-                      title="Профайл"
-                    >
-                      <MapPin className="size-5" />
-                    </button>
+                    <p className="text-blue-600 text-sm font-medium mb-3 flex items-center gap-1">
+                      <Sparkles className="size-3" />
+                      {traveler.title}
+                    </p>
 
-                    <button className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors" aria-label="Мессеж">
-                      <MessageCircle className="size-5" />
-                    </button>
-                    <button className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors" aria-label="Instagram">
-                      <Instagram className="size-5" />
-                    </button>
+                    <p className="text-gray-600 text-sm mb-5 line-clamp-2 leading-relaxed">
+                      {traveler.bio}
+                    </p>
+
+                    {/* Stats - Enhanced */}
+                    <div className="grid grid-cols-3 gap-4 mb-5">
+                      <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-transparent rounded-xl">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Globe className="size-4 text-purple-600" />
+                        </div>
+                        <div className="text-2xl font-bold text-gray-900">{traveler.countriesVisited ?? 0}</div>
+                        <div className="text-xs text-gray-500 font-medium">Орон</div>
+                      </div>
+
+                      <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-transparent rounded-xl">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <TrendingUp className="size-4 text-blue-600" />
+                        </div>
+                        <div className="text-2xl font-bold text-gray-900">{traveler.postsCount ?? 0}</div>
+                        <div className="text-xs text-gray-500 font-medium">Нийтлэл</div>
+                      </div>
+
+                      <div className="text-center p-3 bg-gradient-to-br from-green-50 to-transparent rounded-xl">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Users className="size-4 text-green-600" />
+                        </div>
+                        <div className="text-2xl font-bold text-gray-900">{formatK(followersNum)}</div>
+                        <div className="text-xs text-gray-500 font-medium">Дагагч</div>
+                      </div>
+                    </div>
+
+                    {/* Actions - Enhanced */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleFollow(traveler.id)}
+                        disabled={Boolean(isMe)}
+                        title={isMe ? 'Өөрийгөө дагах боломжгүй' : undefined}
+                        className={`flex-1 px-4 py-3 rounded-xl flex items-center justify-center gap-2 font-semibold transition-all transform ${
+                          isMe
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'hover:scale-105'
+                        } ${
+                          !isMe && isFollowed
+                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            : !isMe
+                              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg shadow-blue-600/30'
+                              : ''
+                        }`}
+                      >
+                        {isMe ? (
+                          <UserCheck className="size-5" />
+                        ) : isFollowed ? (
+                          <UserCheck className="size-5" />
+                        ) : (
+                          <UserPlus className="size-5" />
+                        )}
+                        {isMe ? 'Дагах' : isFollowed ? 'Дагаж байна' : 'Дагах'}
+                      </button>
+
+                      <a
+                        href={toProfileHref(traveler.id)}
+                        className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all hover:scale-110"
+                        aria-label="Профайл"
+                        title="Профайл"
+                      >
+                        <MapPin className="size-5 text-gray-600" />
+                      </a>
+
+                      <button
+                        className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all hover:scale-110"
+                        aria-label="Мессеж"
+                        title="Мессеж"
+                      >
+                        <MessageCircle className="size-5 text-gray-600" />
+                      </button>
+
+                      <button
+                        className="p-3 bg-gradient-to-br from-pink-100 to-purple-100 rounded-xl hover:from-pink-200 hover:to-purple-200 transition-all hover:scale-110"
+                        aria-label="Instagram"
+                        title="Instagram"
+                      >
+                        <Instagram className="size-5 text-pink-600" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </article>
-            );
-          })}
+                </article>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-center">
-        <Globe className="size-16 mx-auto mb-6" />
-        <h2 className="text-4xl mb-4">Та ч Аялагчидт нэгдэх үү?</h2>
-        <button
-          onClick={() => router.push('/register')}
-          className="px-8 py-3 bg-white text-blue-600 rounded-full hover:bg-blue-50 transition-colors"
-        >
-          Бүртгүүлэх
-        </button>
+      {/* CTA - Enhanced */}
+      <section className="relative py-20 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700" />
+
+        {/* Animated background */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-300 rounded-full blur-3xl animate-pulse delay-700" />
+        </div>
+
+        <div className="relative z-10 text-white text-center px-4 max-w-3xl mx-auto">
+          <div className="mb-6 inline-block">
+            <div className="relative">
+              <Globe className="size-20 mx-auto animate-bounce" strokeWidth={1.5} />
+              <div className="absolute -inset-4 bg-white/20 rounded-full blur-xl" />
+            </div>
+          </div>
+
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Та бидэнтэй нэгдэх үү?</h2>
+          <p className="text-xl text-purple-100 mb-8 leading-relaxed">
+            Аяллынхаа түүхийг хуваалцаж, шинэ найзуудтай танилцаарай
+          </p>
+
+          <button
+            onClick={() => (window.location.href = '/register')}
+            className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-2xl hover:bg-blue-50 transition-all transform hover:scale-105 font-semibold text-lg shadow-2xl"
+          >
+            <UserPlus className="size-5" />
+            Бүртгүүлэх
+          </button>
+        </div>
       </section>
     </div>
   );
