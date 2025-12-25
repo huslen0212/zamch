@@ -4,7 +4,7 @@ import authRoutes from './auth';
 import postRoutes from './routes/posts';
 import communityRoutes from './routes/community';
 import postLikeRoutes from './routes/postLikes';
-
+import followRoutes from './routes/follow'
 
 const app = express();
 
@@ -15,7 +15,7 @@ app.use('/auth', authRoutes);
 app.use('/posts', postRoutes);
 app.use('/community', communityRoutes)
 app.use('/posts', postLikeRoutes);
-
+app.use('/users', followRoutes);
 
 app.listen(3001, () => {
   console.log('🚀 Backend running on http://localhost:3001');

@@ -45,8 +45,8 @@ router.post("/register", async (req, res) => {
 
     postsCount: 0,
     totalLikes: 0,
-    followers: 0,
-    following: 0,
+    followersCount: 0,
+    followingCount: 0,
     countriesVisited: 0,
   },
 });
@@ -119,30 +119,35 @@ router.post("/login", async (req, res) => {
 router.get("/me", authMiddleware, async (req: AuthRequest, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.userId },
-   select: {
-    id: true,
-    name: true,
-    email: true,
-    avatar: true,
-    bio: true,
-    location: true,
-    lat: true,
-    lng: true,
-    postsCount: true,
-    totalLikes: true,
-    followers: true,
-    following: true,
-    countriesVisited: true,
-    createdAt: true,
-}
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      avatar: true,
+      bio: true,
+      location: true,
+      lat: true,
+      lng: true,
+      postsCount: true,
+      totalLikes: true,
+      followersCount: true,
+      followingCount: true,
+      countriesVisited: true,
+      createdAt: true,
+    },
   });
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  return res.json(user);
+  return res.json({
+    ...user,
+    joinDate: user.createdAt,
+  });
 });
+
+
 router.patch("/me", authMiddleware, async (req: AuthRequest, res) => {
   try {
     const { name, bio, avatar, location, lat, lng } = req.body;
@@ -203,22 +208,25 @@ router.patch("/me", authMiddleware, async (req: AuthRequest, res) => {
     const updated = await prisma.user.update({
       where: { id: req.userId },
       data,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        avatar: true,
-        bio: true,
-        location: true,
-        lat: true,
-        lng: true,
-        postsCount: true,
-        totalLikes: true,
-        followers: true,
-        following: true,
-        countriesVisited: true,
-        createdAt: true,
-      },
+select: {
+  id: true,
+  name: true,
+  email: true,
+  avatar: true,
+  bio: true,
+  location: true,
+  lat: true,
+  lng: true,
+
+  postsCount: true,
+  totalLikes: true,
+  followersCount: true,
+  followingCount: true,
+  countriesVisited: true,
+
+  createdAt: true,
+},
+
     });
 
     return res.json(updated);

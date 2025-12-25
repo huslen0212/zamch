@@ -25,10 +25,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 type LocationDto =
   | string
   | {
-  name: string;
-  lat?: number;
-  lng?: number;
-};
+      name: string;
+      lat?: number;
+      lng?: number;
+    };
 
 interface Post {
   id: string | number;
@@ -60,11 +60,13 @@ function formatDateMN(dateStr?: string) {
   return d.toLocaleDateString('mn-MN');
 }
 
-function normalizeLocation(loc: LocationDto | null | undefined): {
-  name: string;
-  lat?: number;
-  lng?: number;
-} | undefined {
+function normalizeLocation(loc: LocationDto | null | undefined):
+  | {
+      name: string;
+      lat?: number;
+      lng?: number;
+    }
+  | undefined {
   if (!loc) return undefined;
   if (typeof loc === 'string') return { name: loc };
   return {
@@ -94,12 +96,12 @@ type EditFormState = {
 };
 
 function EditProfileModal({
-                            open,
-                            initial,
-                            saving,
-                            onClose,
-                            onSave,
-                          }: {
+  open,
+  initial,
+  saving,
+  onClose,
+  onSave,
+}: {
   open: boolean;
   initial: EditFormState;
   saving: boolean;
@@ -185,7 +187,9 @@ function EditProfileModal({
                 </label>
                 <input
                   value={form.name}
-                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, name: e.target.value }))
+                  }
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="Таны нэр"
                   required
@@ -199,7 +203,9 @@ function EditProfileModal({
                 </label>
                 <textarea
                   value={form.bio}
-                  onChange={(e) => setForm((p) => ({ ...p, bio: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, bio: e.target.value }))
+                  }
                   className="w-full min-h-[100px] rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
                   placeholder="Өөрийнхөө тухай товч бичнэ үү..."
                 />
@@ -225,9 +231,7 @@ function EditProfileModal({
                   <Upload className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
                 </div>
               </div>
-
             </div>
-
           </form>
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3">
             <button
@@ -262,8 +266,12 @@ function EditProfileModal({
 
       <style jsx>{`
         @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
         @keyframes slideUp {
           from {
@@ -299,8 +307,8 @@ export function Profile() {
     return {
       postsCount: user?.postsCount ?? 0,
       totalLikes: user?.totalLikes ?? 0,
-      followers: user?.followers ?? 0,
-      following: user?.following ?? 0,
+      followersCount: user?.followersCount ?? 0,
+      followingCount: user?.followingCount ?? 0,
       countriesVisited: user?.countriesVisited ?? 0,
     };
   }, [user]);
@@ -323,7 +331,11 @@ export function Profile() {
         return res.json();
       })
       .then((raw) => {
-        const arr = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+        const arr = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : [];
         const normalized: Post[] = arr.map((p: any) => {
           const loc = normalizeLocation(p.location ?? null);
           const createdAt = p.createdAt ?? p.cdate ?? new Date().toISOString();
@@ -336,7 +348,8 @@ export function Profile() {
             location: loc ? { ...loc } : null,
             createdAt,
             date: formatDateMN(createdAt),
-            readTime: p.readTime ?? estimateReadTime(p.excerpt ?? p.description),
+            readTime:
+              p.readTime ?? estimateReadTime(p.excerpt ?? p.description),
           };
         });
         setUserPosts(normalized);
@@ -379,7 +392,6 @@ export function Profile() {
   const safeJoinDate = user.joinDate ? formatDateMN(user.joinDate) : '';
 
   const userLoc = normalizeLocation(user.location as any);
-
 
   const editInitial: EditFormState = {
     name: user.name ?? '',
@@ -532,7 +544,7 @@ export function Profile() {
                   </div>
                   <div>
                     <div className="text-lg font-semibold text-gray-900">
-                      {stats.followers.toLocaleString()}
+                      {stats.followersCount.toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-600">Дагагч</div>
                   </div>

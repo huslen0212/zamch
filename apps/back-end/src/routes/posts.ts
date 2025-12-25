@@ -301,6 +301,19 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
       ? post.likes.some((like) => like.userId === req.userId)
       : false;
 
+    const followedByMe = req.userId
+      ? Boolean(
+          await prisma.follow.findUnique({
+            where: {
+              followerId_followingId: {
+                followerId: req.userId,
+                followingId: post.authorId,
+              },
+            },
+          })
+        )
+      : false;
+
     return res.json({
       id: post.id,
       title: post.title,
@@ -310,13 +323,13 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
       image: post.imageUrl,
       createdAt: post.createdAt,
       readTime: getRelativeTime(post.createdAt),
-
+      authorId: post.authorId,
       author: post.author.name,
       authorAvatar: post.author.avatar,
       authorBio: post.author.bio,
-
       likesCount: post.likes.length,
       likedByMe,
+      followedByMe,
     });
   } catch (error) {
     console.error('GET POST ERROR:', error);

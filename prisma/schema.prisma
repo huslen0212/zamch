@@ -13,7 +13,7 @@ model User {
   email    String @unique
   password String
 
-  // Profile info
+  // Profile
   avatar String?
   bio    String?
 
@@ -22,15 +22,19 @@ model User {
   lat      Float?
   lng      Float?
 
-  // Stats
+  // Stats (🔥 relation-оос ТУСАД нь)
   postsCount       Int @default(0)
   totalLikes       Int @default(0)
-  followers        Int @default(0)
-  following        Int @default(0)
+  followersCount   Int @default(0)
+  followingCount   Int @default(0)
   countriesVisited Int @default(0)
 
+  // Relations
   posts Post[]
   likes PostLike[]
+
+  following Follow[] @relation("UserFollowing")
+  followers Follow[] @relation("UserFollowers")
 
   createdAt DateTime @default(now())
 }
@@ -51,7 +55,7 @@ model Post {
   lng      Float?
 
   authorId String
-  author   User   @relation(fields: [authorId], references: [id])
+  author   User @relation(fields: [authorId], references: [id])
 
   likes PostLike[]
 
@@ -68,4 +72,18 @@ model PostLike {
   post Post @relation(fields: [postId], references: [id])
 
   @@unique([userId, postId])
+}
+
+model Follow {
+  id Int @id @default(autoincrement())
+
+  followerId  String
+  followingId String
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id])
+  following User @relation("UserFollowers", fields: [followingId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([followerId, followingId])
 }

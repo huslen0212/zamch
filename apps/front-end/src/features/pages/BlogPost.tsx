@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
-  Bookmark,
   Calendar,
   Clock,
   Facebook,
@@ -28,6 +27,8 @@ interface BlogPostType {
   authorBio?: string;
   likeCount: number;
   likedByMe: boolean;
+  followedByMe: boolean;
+  authorId: string;
 }
 
 export function BlogPost({ postId }: { postId: number }) {
@@ -37,7 +38,7 @@ export function BlogPost({ postId }: { postId: number }) {
   const [loading, setLoading] = useState(true);
 
   const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const [isFollowed, setIsFollowed] = useState(false);
   const [likes, setLikes] = useState(0);
 
   useEffect(() => {
@@ -56,6 +57,7 @@ export function BlogPost({ postId }: { postId: number }) {
         setPost(data);
         setLikes(typeof data.likesCount === 'number' ? data.likesCount : 0);
         setIsLiked(Boolean(data.likedByMe));
+        setIsFollowed(data.followedByMe);
       })
       .catch(() => setPost(null))
       .finally(() => setLoading(false));
@@ -92,6 +94,23 @@ export function BlogPost({ postId }: { postId: number }) {
     const data = await res.json();
     setIsLiked(data.liked);
     setLikes((prev) => (data.liked ? prev + 1 : prev - 1));
+  };
+
+  const handleFollow = async () => {
+    const res = await fetch(
+      `http://localhost:3001/users/${post.authorId}/follow`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      },
+    );
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+    setIsFollowed(data.followed);
   };
 
   return (
@@ -169,15 +188,15 @@ export function BlogPost({ postId }: { postId: number }) {
               </button>
 
               <button
-                onClick={() => setIsSaved((v) => !v)}
+                onClick={handleFollow}
                 className={`p-2 rounded-full ${
-                  isSaved
+                  isFollowed
                     ? 'bg-blue-50 text-blue-600'
                     : 'bg-gray-100 text-gray-700'
                 }`}
               >
-                <Bookmark
-                  className={`size-5 ${isSaved ? 'fill-blue-600' : ''}`}
+                <User
+                  className={`size-5 ${isFollowed ? 'fill-blue-600' : ''}`}
                 />
               </button>
             </div>
