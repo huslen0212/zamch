@@ -203,6 +203,7 @@ router.get("/", async (_req: Request, res: Response) => {
         author: post.author?.name ?? null,
         createdAt: post.createdAt,
         readTime: getRelativeTime(post.createdAt),
+        location:post.location ?? '',
       }))
     );
   } catch (error: any) {
