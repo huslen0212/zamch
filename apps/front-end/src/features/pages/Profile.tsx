@@ -35,7 +35,7 @@ interface Post {
   title: string;
   excerpt: string;
   category: string;
-  image?: string | null;
+  imageUrl?: string | null;
   location?: {
     name: string;
     lat?: number;
@@ -344,7 +344,7 @@ export function Profile() {
             title: p.title ?? '',
             excerpt: p.excerpt ?? p.description ?? '',
             category: p.category ?? p.categoryName ?? 'Ерөнхий',
-            image: p.image ?? p.thumbnail ?? null,
+            imageUrl: p.imageUrl ?? p.thumbnail ?? null,
             location: loc ? { ...loc } : null,
             createdAt,
             date: formatDateMN(createdAt),
@@ -558,7 +558,7 @@ export function Profile() {
                     <div className="text-lg font-semibold text-gray-900">
                       {stats.countriesVisited}
                     </div>
-                    <div className="text-xs text-gray-600">Улс</div>
+                    <div className="text-xs text-gray-600">Аймаг</div>
                   </div>
                 </div>
               </div>
@@ -577,7 +577,7 @@ export function Profile() {
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
           {/* Posts */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <h2 className="text-xl sm:text-2xl font-bold">
                 Миний нийтлэлүүд ({userPosts.length})
@@ -606,7 +606,7 @@ export function Profile() {
                     <div className="flex flex-col sm:flex-row">
                       <div className="sm:w-1/3 bg-gray-100 relative overflow-hidden h-48 sm:h-auto">
                         <img
-                          src={post.image || '/placeholder.jpg'}
+                          src={post?.imageUrl || '/placeholder.jpg'}
                           alt={post.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         />

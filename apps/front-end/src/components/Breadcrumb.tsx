@@ -17,7 +17,7 @@ const slugToCategory: Record<string, string> = {
 const staticLabels: Record<string, string> = {
   blogs: "Бүх нийтлэл",
   destinations: "Газрууд",
-  community: "Нийгэмлэг",
+  community: "Аялагчид",
   "travel-map": "Аяллын газрын зураг",
   "create-post": "Нийтлэл бичих",
   profile: "Профайл",

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Mail,
   Lock,
@@ -48,6 +48,21 @@ export function Register() {
     [],
   );
 
+  // ✅ Default location (Улаанбаатар)
+  const defaultLocation = useMemo(() => {
+    return (
+      popularLocations.find((l) => l.name === 'Улаанбаатар') ?? popularLocations[0]
+    );
+  }, [popularLocations]);
+
+  // ✅ Хүсвэл: анх ороход UI дээр Улаанбаатар гэж автоматаар сонгогдсон харагдуулна
+  useEffect(() => {
+    if (!selectedLocation && !locationName.trim()) {
+      setSelectedLocation(defaultLocation);
+      setLocationName(defaultLocation.name);
+    }
+  }, [defaultLocation]);
+
   const filteredLocations = useMemo(() => {
     if (!locationName.trim()) return popularLocations;
     const q = locationName.toLowerCase();
@@ -65,17 +80,14 @@ export function Register() {
 
     setLoading(true);
 
-    const result = await register(
-      name,
-      email,
-      password,
-      selectedLocation || undefined,
-    );
+    // ✅ Байршил сонгоогүй бол Улаанбаатар явуулна
+    const locToSend = selectedLocation ?? defaultLocation;
+
+    const result = await register(name, email, password, locToSend);
 
     if (result.success) {
-      router.push('/');
+      router.push('/login');
     } else {
-      // 🔥 backend-ээс ирсэн алдаа энд харагдана
       setError(result.message);
     }
 
@@ -100,7 +112,7 @@ export function Register() {
             <User className="size-8 text-white" />
           </div>
           <h1 className="text-3xl mb-2">Бүртгүүлэх</h1>
-          <p className="text-gray-600">Wanderlust нийгэмлэгт нэгдээрэй</p>
+          <p className="text-gray-600">Wanderlust Аялагчидт нэгдээрэй</p>
         </div>
 
         {/* Register Form */}
@@ -115,10 +127,7 @@ export function Register() {
 
             {/* Name */}
             <div>
-              <label
-                htmlFor="name"
-                className="block text-sm mb-2 text-gray-700"
-              >
+              <label htmlFor="name" className="block text-sm mb-2 text-gray-700">
                 Нэр
               </label>
               <div className="relative">
@@ -137,10 +146,7 @@ export function Register() {
 
             {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm mb-2 text-gray-700"
-              >
+              <label htmlFor="email" className="block text-sm mb-2 text-gray-700">
                 И-мэйл хаяг
               </label>
               <div className="relative">
@@ -159,9 +165,7 @@ export function Register() {
 
             {/* Location */}
             <div>
-              <label className="block text-sm mb-2 text-gray-700">
-                Байршил
-              </label>
+              <label className="block text-sm mb-2 text-gray-700">Байршил</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-3 size-5 text-gray-400" />
                 <input
@@ -169,7 +173,7 @@ export function Register() {
                   value={locationName}
                   onChange={(e) => {
                     setLocationName(e.target.value);
-                    setSelectedLocation(null);
+                    setSelectedLocation(null); // гараар бичвэл "сонголт"-ыг reset хийнэ
                   }}
                   placeholder="Хот сонгох"
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none"
@@ -201,14 +205,18 @@ export function Register() {
                   );
                 })}
               </div>
+
+              {/* ✅ Сануулга текст (optional) */}
+              {!selectedLocation ? (
+                <p className="mt-2 text-xs text-gray-500">
+                  Байршил сонгоогүй тул автоматаар <b>{defaultLocation.name}</b> гэж бүртгэнэ.
+                </p>
+              ) : null}
             </div>
 
             {/* Password */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm mb-2 text-gray-700"
-              >
+              <label htmlFor="password" className="block text-sm mb-2 text-gray-700">
                 Нууц үг
               </label>
               <div className="relative">
@@ -228,11 +236,7 @@ export function Register() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   aria-label="Toggle password visibility"
                 >
-                  {showPassword ? (
-                    <EyeOff className="size-5" />
-                  ) : (
-                    <Eye className="size-5" />
-                  )}
+                  {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                 </button>
               </div>
 
@@ -243,13 +247,13 @@ export function Register() {
                   />
                   <span className="text-gray-600">Нууц үгийн хүч: </span>
                   <span
-                    className={`$${
+                    className={
                       passwordStrength === 'Хүчтэй'
                         ? 'text-green-600'
                         : passwordStrength === 'Дундаж'
                           ? 'text-yellow-600'
                           : 'text-red-600'
-                    }`}
+                    }
                   >
                     {passwordStrength}
                   </span>
@@ -259,10 +263,7 @@ export function Register() {
 
             {/* Confirm Password */}
             <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm mb-2 text-gray-700"
-              >
+              <label htmlFor="confirmPassword" className="block text-sm mb-2 text-gray-700">
                 Нууц үг давтах
               </label>
               <div className="relative">
@@ -300,10 +301,7 @@ export function Register() {
 
           <div className="text-center mt-6">
             <span className="text-gray-600">Аль хэдийн бүртгэлтэй юу? </span>
-            <Link
-              href="/login"
-              className="text-purple-600 hover:text-purple-700"
-            >
+            <Link href="/login" className="text-purple-600 hover:text-purple-700">
               Нэвтрэх
             </Link>
           </div>

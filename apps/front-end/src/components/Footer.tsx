@@ -10,7 +10,7 @@ export function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <MapPin className="size-8 text-blue-600" />
-              <span className="text-xl text-white">Аялал Нүүдэл</span>
+              <span className="text-xl text-white">Замч</span>
             </div>
             <p className="text-gray-400 max-w-md">
               Дэлхийн хамгийн үзэсгэлэнтэй газруудыг нээх таны хаалга.
@@ -95,7 +95,7 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-gray-800 text-center text-gray-400">
-          <p>&copy; 2024 Аялал Нүүдэл. Бүх эрх хуулиар хамгаалагдсан.</p>
+          <p>&copy; 2025 Замч. Бүх эрх хуулиар хамгаалагдсан.</p>
         </div>
       </div>
     </footer>

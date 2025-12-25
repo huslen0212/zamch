@@ -10,7 +10,7 @@ const navItems: Array<{ href: string; label: string; match?: "exact" | "prefix" 
   { href: "/create-post", label: "Нийтлэл бичих", match: "exact" },
   { href: "/destinations", label: "Газрууд", match: "exact" },
   { href: "/travel-map", label: "Газрын зураг", match: "exact" },
-  { href: "/community", label: "Нийгэмлэг", match: "exact" },
+  { href: "/community", label: "Аялагчид", match: "exact" },
   { href: "/profile", label: "Профайл", match: "exact" },
   { href: "/leaderboard", label: "Leaderboard", match: "exact" },
   { href: "/login", label: "Нэвтрэх", match: "exact" },

@@ -8,6 +8,7 @@
   "private": true,
   "dependencies": {
     "@prisma/client": "^6.19.1",
+    "dayjs": "^1.11.19",
     "express": "^4.21.2",
     "framer-motion": "^12.23.26",
     "leaflet": "^1.9.4",

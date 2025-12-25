@@ -33,7 +33,8 @@ type UserProfile = {
   followingCount: number;
   countriesVisited: number;
 
-  joinDate?: string;
+  joinDate?: string; // backend joinDate өгвөл
+  createdAt?: string; // эсвэл createdAt өгвөл
   followedByMe?: boolean;
   isMe?: boolean;
 };
@@ -95,18 +96,22 @@ export function PublicProfile({ userId }: { userId: string }) {
 
   const [loading, setLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(true);
+
   const [followLoading, setFollowLoading] = useState(false);
+  const [followError, setFollowError] = useState<string | null>(null);
+
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [postsError, setPostsError] = useState<string | null>(null);
 
   const safeAvatar = user?.avatar ?? "/default-avatar.png";
   const safeBio = user?.bio ?? "Танилцуулга алга байна.";
-  const joinDate = user?.joinDate ? formatDateMN(user.joinDate) : "";
+
+  const joinDateStr = useMemo(() => {
+    const raw = user?.joinDate || user?.createdAt;
+    return raw ? formatDateMN(raw) : "";
+  }, [user?.joinDate, user?.createdAt]);
 
   const isFollowed = Boolean(user?.followedByMe);
-
-  const headers = useMemo(() => {
-    const t = getTokenSafe();
-    return t ? { Authorization: `Bearer ${t}` } : {};
-  }, []);
 
   // ---------- USER PROFILE ----------
   useEffect(() => {
@@ -114,25 +119,37 @@ export function PublicProfile({ userId }: { userId: string }) {
 
     const ac = new AbortController();
     setLoading(true);
+    setProfileError(null);
 
-    fetch(`${API_URL}/usersInfo/${userId}`, { headers, signal: ac.signal })
-      .then((r) => {
-        if (!r.ok) throw new Error("not found");
-        return r.json();
+    const token = getTokenSafe();
+    const headers: Record<string, string> = token
+      ? { Authorization: `Bearer ${token}` }
+      : {};
+
+    fetch(`${API_URL}/usersInfo/${userId}`, { headers})
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({} as any));
+          throw new Error(err?.message ?? "Хэрэглэгч олдсонгүй");
+        }
+        return (await r.json()) as UserProfile;
       })
-      .then((data: UserProfile) => {
-        // хүсвэл өөрийн профайл бол /profile руу чиглүүлж болно
+      .then((data) => {
+        // өөрийн профайл бол /profile руу чиглүүлэх (хүсвэл)
         if (data?.isMe) {
           router.push("/profile");
           return;
         }
         setUser(data);
       })
-      .catch(() => setUser(null))
+      .catch((e: any) => {
+        setUser(null);
+        setProfileError(e?.message ?? "Алдаа гарлаа");
+      })
       .finally(() => setLoading(false));
 
     return () => ac.abort();
-  }, [userId, headers, router]);
+  }, [userId, router]);
 
   // ---------- USER POSTS ----------
   useEffect(() => {
@@ -140,12 +157,16 @@ export function PublicProfile({ userId }: { userId: string }) {
 
     const ac = new AbortController();
     setPostsLoading(true);
+    setPostsError(null);
 
     fetch(`${API_URL}/posts/user/${userId}?take=20&skip=0`, {
       signal: ac.signal,
     })
       .then(async (r) => {
-        if (!r.ok) throw new Error("posts fetch failed");
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({} as any));
+          throw new Error(err?.message ?? "Нийтлэл татахад алдаа гарлаа");
+        }
         return (await r.json()) as PostsByUserResponse;
       })
       .then((data) => {
@@ -153,17 +174,25 @@ export function PublicProfile({ userId }: { userId: string }) {
         setPosts(list);
         setPostsTotal(typeof data?.total === "number" ? data.total : list.length);
       })
-      .catch(() => {
+      .catch((e: any) => {
         setPosts([]);
         setPostsTotal(0);
+        setPostsError(e?.message ?? "Нийтлэл татахад алдаа гарлаа");
       })
       .finally(() => setPostsLoading(false));
 
     return () => ac.abort();
   }, [userId]);
 
+  // ---------- FOLLOW (✅ optimistic биш: зөвхөн амжилттай үед update) ----------
   const toggleFollow = async () => {
     if (!user) return;
+
+    // ✅ өөрийгөө дагахгүй
+    if (user.isMe) {
+      setFollowError("Өөрийгөө дагах боломжгүй.");
+      return;
+    }
 
     const token = getTokenSafe();
     if (!token) {
@@ -173,37 +202,51 @@ export function PublicProfile({ userId }: { userId: string }) {
     if (followLoading) return;
 
     setFollowLoading(true);
+    setFollowError(null);
 
-    // optimistic
-    const prev = Boolean(user.followedByMe);
-    const next = !prev;
-
-    setUser((p) =>
-      p
-        ? {
-          ...p,
-          followedByMe: next,
-          followersCount: Math.max(
-            0,
-            (p.followersCount ?? 0) + (next ? 1 : -1)
-          ),
-        }
-        : p
-    );
+    const prevFollowed = Boolean(user.followedByMe);
+    const prevFollowers = Number.isFinite(user.followersCount)
+      ? user.followersCount
+      : 0;
 
     try {
       const res = await fetch(`${API_URL}/users/${user.id}/follow`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("follow failed");
+
       const data = await res.json().catch(() => ({} as any));
 
-      if (typeof data?.followed === "boolean") {
-        setUser((p) => (p ? { ...p, followedByMe: Boolean(data.followed) } : p));
+      // ❌ Амжилтгүй бол UI-г өөрчлөхгүй
+      if (!res.ok) {
+        setFollowError(data?.message ?? "Дагах хүсэлт амжилтгүй.");
+        return;
       }
-    } catch {
-      setUser((p) => (p ? { ...p, followedByMe: prev } : p));
+
+      const followed = Boolean(data?.followed);
+
+      // Хэрвээ backend followersCount буцаавал тэрийг ашиглана
+      let nextFollowers = prevFollowers;
+      if (typeof data?.followersCount === "number") {
+        nextFollowers = data.followersCount;
+      } else {
+        if (!prevFollowed && followed) nextFollowers = prevFollowers + 1;
+        if (prevFollowed && !followed)
+          nextFollowers = Math.max(0, prevFollowers - 1);
+      }
+
+      setUser((p) =>
+        p
+          ? {
+            ...p,
+            followedByMe: followed,
+            followersCount: nextFollowers,
+          }
+          : p
+      );
+    } catch (e) {
+      console.error(e);
+      setFollowError("Сүлжээний алдаа гарлаа. Дахин оролдоно уу.");
     } finally {
       setFollowLoading(false);
     }
@@ -220,8 +263,18 @@ export function PublicProfile({ userId }: { userId: string }) {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-red-600">
-        Хэрэглэгч олдсонгүй
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
+        <div className="bg-white rounded-xl shadow p-6 text-center max-w-md w-full">
+          <div className="text-red-600 font-semibold mb-2">
+            {profileError ?? "Хэрэглэгч олдсонгүй"}
+          </div>
+          <button
+            onClick={() => router.back()}
+            className="mt-3 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition font-medium"
+          >
+            Буцах
+          </button>
+        </div>
       </div>
     );
   }
@@ -267,17 +320,29 @@ export function PublicProfile({ userId }: { userId: string }) {
 
                   <button
                     onClick={toggleFollow}
-                    disabled={followLoading}
+                    disabled={followLoading || Boolean(user.isMe)}
                     className={`px-4 py-2 rounded-lg transition font-medium shadow ${
                       isFollowed
                         ? "bg-blue-50 text-blue-700 border border-blue-200"
                         : "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                    } ${followLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+                    } ${
+                      followLoading || user.isMe
+                        ? "opacity-60 cursor-not-allowed"
+                        : ""
+                    }`}
                   >
-                    {isFollowed ? "Дагаж байна" : "Дагах"}
+                    {user.isMe
+                      ? "Өөрийн профайл"
+                      : isFollowed
+                        ? "Дагаж байна"
+                        : "Дагах"}
                   </button>
                 </div>
               </div>
+
+              {followError ? (
+                <div className="mb-3 text-sm text-red-600">{followError}</div>
+              ) : null}
 
               {user.location ? (
                 <div className="flex items-center gap-2 text-gray-600 mb-4">
@@ -310,10 +375,10 @@ export function PublicProfile({ userId }: { userId: string }) {
                 />
               </div>
 
-              {joinDate ? (
+              {joinDateStr ? (
                 <div className="flex items-center gap-2 text-gray-500 text-sm">
                   <Calendar className="size-4" />
-                  <span>Нэгдсэн: {joinDate}</span>
+                  <span>Нэгдсэн: {joinDateStr}</span>
                 </div>
               ) : null}
             </div>
@@ -321,8 +386,8 @@ export function PublicProfile({ userId }: { userId: string }) {
         </div>
 
         {/* Posts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 pb-12">
-          <div className="lg:col-span-3 space-y-4">
+        <div className="grid grid-cols-1 gap-6 pb-12">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl sm:text-2xl font-bold">
                 Нийтлэлүүд ({postsTotal})
@@ -339,6 +404,10 @@ export function PublicProfile({ userId }: { userId: string }) {
               <div className="bg-white rounded-xl p-10 text-center text-gray-600">
                 <Loader2 className="size-6 animate-spin mx-auto mb-3 text-blue-600" />
                 Ачаалж байна...
+              </div>
+            ) : postsError ? (
+              <div className="bg-white rounded-xl p-6 text-center text-red-600">
+                {postsError}
               </div>
             ) : posts.length ? (
               posts.map((p) => (
@@ -382,7 +451,9 @@ export function PublicProfile({ userId }: { userId: string }) {
                         <span>{formatDateMN(p.createdAt)}</span>
                         <span>•</span>
                         <span>
-                          {p.readTime ? p.readTime : `${estimateReadTime(p.excerpt)} унших`}
+                          {p.readTime
+                            ? p.readTime
+                            : `${estimateReadTime(p.excerpt)} унших`}
                         </span>
                       </div>
                     </div>
@@ -395,7 +466,6 @@ export function PublicProfile({ userId }: { userId: string }) {
               </div>
             )}
           </div>
-
         </div>
       </div>
     </div>

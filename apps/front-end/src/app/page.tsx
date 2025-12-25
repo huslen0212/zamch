@@ -34,7 +34,6 @@ export default async function HomePage() {
   }
 
   const featuredPost = posts[0];
-
   return (
     <main>
       <Hero
@@ -47,7 +46,6 @@ export default async function HomePage() {
         date={new Date(featuredPost.date).toLocaleDateString('mn-MN')}
         readTime={featuredPost.readTime}
       />
-
       <BlogGrid posts={posts} />
     </main>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Search,
   Menu,
@@ -11,8 +11,9 @@ import {
   LogOut,
   User,
   ChevronDown,
+  Trophy,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 export function Header() {
@@ -21,10 +22,10 @@ export function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // ✅ loading нэмнэ
   const { user, isAuthenticated, loading, logout } = useAuth();
 
   const router = useRouter();
+  const pathname = usePathname();
   const profileRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -58,14 +59,24 @@ export function Header() {
     setIsSearchOpen(false);
   };
 
-  const navLinks = [
-    { href: "/", label: "Нүүр" },
-    { href: "/destinations", label: "Газрууд" },
-    { href: "/blogs", label: "Блог" },
-    { href: "/community", label: "Нийгэмлэг" },
-    { href: "/about", label: "Бидний тухай" },
-    { href: "/contact", label: "Холбоо барих" },
-  ];
+  // ✅ Leaderboard нэмсэн
+  const navLinks = useMemo(
+    () => [
+      { href: "/", label: "Нүүр" },
+      { href: "/destinations", label: "Газрууд" },
+      { href: "/blogs", label: "Блог" },
+      { href: "/leaderboard", label: "Leaderboard", icon: Trophy }, // ✅ NEW
+      { href: "/community", label: "Аялагчид" },
+      { href: "/about", label: "Бидний тухай" },
+      { href: "/contact", label: "Холбоо барих" },
+    ],
+    []
+  );
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname?.startsWith(href);
+  };
 
   const AuthSkeleton = () => (
     <div className="hidden md:flex items-center gap-2 lg:gap-3">
@@ -97,21 +108,30 @@ export function Header() {
           >
             <Globe className="size-6 sm:size-7 lg:size-8 text-blue-600" />
             <span className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900">
-              Wanderlust
+              Замч
             </span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="px-3 py-2 text-sm xl:text-base text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const active = isActive(link.href);
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`px-3 py-2 text-sm xl:text-base rounded-lg transition-all font-medium flex items-center gap-2 ${
+                    active
+                      ? "text-blue-700 bg-blue-50"
+                      : "text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                  }`}
+                >
+                  {Icon ? <Icon className="size-4" /> : null}
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Right Actions */}
@@ -125,7 +145,7 @@ export function Header() {
               <Search className="size-4 sm:size-5 text-gray-600" />
             </button>
 
-            {/* ✅ Desktop Auth Actions */}
+            {/* Desktop Auth Actions */}
             {loading ? (
               <AuthSkeleton />
             ) : isAuthenticated ? (
@@ -169,6 +189,7 @@ export function Header() {
                         </div>
                       </div>
 
+                      {/* ✅ profile нь өөрийн профайл: /profile эсвэл /profile/{id} байж болно */}
                       <Link
                         href="/profile"
                         onClick={() => setIsProfileOpen(false)}
@@ -176,6 +197,16 @@ export function Header() {
                       >
                         <User className="size-4" />
                         Профайл
+                      </Link>
+
+                      {/* ✅ leaderboard shortcut */}
+                      <Link
+                        href="/leaderboard"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2.5 text-gray-700"
+                      >
+                        <Trophy className="size-4" />
+                        Leaderboard
                       </Link>
 
                       <button
@@ -238,31 +269,49 @@ export function Header() {
 
         {/* Tablet Navigation (md-lg) */}
         <nav className="hidden md:flex lg:hidden items-center gap-1 py-2 border-t border-gray-100 overflow-x-auto">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="px-3 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium whitespace-nowrap"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const active = isActive(link.href);
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3 py-1.5 text-sm rounded-lg transition-all font-medium whitespace-nowrap flex items-center gap-2 ${
+                  active
+                    ? "text-blue-700 bg-blue-50"
+                    : "text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                }`}
+              >
+                {Icon ? <Icon className="size-4" /> : null}
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-200 animate-slideDown">
             <nav className="flex flex-col py-3 gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={closeMenu}
-                  className="px-4 py-2.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-lg font-medium"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const active = isActive(link.href);
+                const Icon = link.icon;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMenu}
+                    className={`px-4 py-2.5 transition-all rounded-lg font-medium flex items-center gap-2 ${
+                      active
+                        ? "text-blue-700 bg-blue-50"
+                        : "text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                    }`}
+                  >
+                    {Icon ? <Icon className="size-4" /> : null}
+                    {link.label}
+                  </Link>
+                );
+              })}
 
               {/* Search Bar (Mobile) */}
               <div className="px-4 py-2">
@@ -276,7 +325,7 @@ export function Header() {
                 </div>
               </div>
 
-              {/* ✅ Mobile Auth Actions */}
+              {/* Mobile Auth Actions */}
               {loading ? (
                 <MobileAuthSkeleton />
               ) : (
@@ -299,6 +348,17 @@ export function Header() {
                         <User className="size-4" />
                         <span>Профайл</span>
                       </Link>
+
+                      {/* ✅ mobile shortcut */}
+                      <Link
+                        href="/leaderboard"
+                        onClick={closeMenu}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium"
+                      >
+                        <Trophy className="size-4" />
+                        <span>Leaderboard</span>
+                      </Link>
+
                       <button
                         onClick={handleLogout}
                         className="flex items-center justify-center gap-2 px-4 py-2.5 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-all font-medium"
