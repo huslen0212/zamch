@@ -43,10 +43,6 @@ export function Contact() {
 
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const fadeUp = {
-    hidden: { opacity: 0, y: 16 },
-    show: { opacity: 1, y: 0 },
-  };
 
   const validate = (data: FormState): FormErrors => {
     const e: FormErrors = {};
