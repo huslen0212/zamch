@@ -3,11 +3,20 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Calendar, Globe, Heart, MapPin, Users, Loader2 } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  BookOpen,
+  Calendar,
+  Globe,
+  Heart,
+  MapPin,
+  Users,
+  Loader2,
+} from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
-type LocationDto = { name: string; lat?: number; lng?: number };
+type LocationDto = { name: string; lat?: number | null; lng?: number | null };
 
 type UserProfile = {
   id: string;
@@ -29,38 +38,61 @@ type UserProfile = {
   isMe?: boolean;
 };
 
-type Post = {
-  id: number | string;
+type PostCard = {
+  id: number;
   title: string;
   excerpt: string;
   category: string;
   image?: string | null;
-  location?: LocationDto | null;
   createdAt: string;
+  readTime?: string;
+
+  author?: string | null;
+  authorAvatar?: string | null;
+
+  location?: LocationDto | null;
+};
+
+type PostsByUserResponse = {
+  userId: string;
+  total: number;
+  take: number;
+  skip: number;
+  posts: PostCard[];
 };
 
 function getTokenSafe() {
   if (typeof window === "undefined") return "";
   return localStorage.getItem("token") ?? "";
 }
+
 function formatDateMN(dateStr?: string) {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("mn-MN");
+  return d.toLocaleDateString("mn-MN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
-function estimateReadTime(excerpt?: string) {
-  const text = (excerpt ?? "").trim();
-  if (!text) return "1 мин";
-  const words = text.split(/\s+/).filter(Boolean).length;
+
+function estimateReadTime(text?: string) {
+  const t = (text ?? "").trim();
+  if (!t) return "1 мин";
+  const words = t.split(/\s+/).filter(Boolean).length;
   const mins = Math.max(1, Math.round(words / 200));
   return `${mins} мин`;
 }
 
 export function PublicProfile({ userId }: { userId: string }) {
   const router = useRouter();
+
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
+
+  const [posts, setPosts] = useState<PostCard[]>([]);
+  const [postsTotal, setPostsTotal] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState(false);
@@ -76,7 +108,10 @@ export function PublicProfile({ userId }: { userId: string }) {
     return t ? { Authorization: `Bearer ${t}` } : {};
   }, []);
 
+  // ---------- USER PROFILE ----------
   useEffect(() => {
+    if (!userId) return;
+
     const ac = new AbortController();
     setLoading(true);
 
@@ -85,8 +120,8 @@ export function PublicProfile({ userId }: { userId: string }) {
         if (!r.ok) throw new Error("not found");
         return r.json();
       })
-      .then((data) => {
-        // өөрийн профайл бол /profile руу чиглүүлж болно (хүсвэл)
+      .then((data: UserProfile) => {
+        // хүсвэл өөрийн профайл бол /profile руу чиглүүлж болно
         if (data?.isMe) {
           router.push("/profile");
           return;
@@ -97,16 +132,31 @@ export function PublicProfile({ userId }: { userId: string }) {
       .finally(() => setLoading(false));
 
     return () => ac.abort();
-  }, [userId]);
+  }, [userId, headers, router]);
 
+  // ---------- USER POSTS ----------
   useEffect(() => {
+    if (!userId) return;
+
     const ac = new AbortController();
     setPostsLoading(true);
 
-    fetch(`${API_URL}/posts/user/${userId}`, { signal: ac.signal })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((arr) => setPosts(Array.isArray(arr) ? arr : []))
-      .catch(() => setPosts([]))
+    fetch(`${API_URL}/posts/user/${userId}?take=20&skip=0`, {
+      signal: ac.signal,
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error("posts fetch failed");
+        return (await r.json()) as PostsByUserResponse;
+      })
+      .then((data) => {
+        const list = Array.isArray(data?.posts) ? data.posts : [];
+        setPosts(list);
+        setPostsTotal(typeof data?.total === "number" ? data.total : list.length);
+      })
+      .catch(() => {
+        setPosts([]);
+        setPostsTotal(0);
+      })
       .finally(() => setPostsLoading(false));
 
     return () => ac.abort();
@@ -114,6 +164,7 @@ export function PublicProfile({ userId }: { userId: string }) {
 
   const toggleFollow = async () => {
     if (!user) return;
+
     const token = getTokenSafe();
     if (!token) {
       router.push("/login");
@@ -124,7 +175,7 @@ export function PublicProfile({ userId }: { userId: string }) {
     setFollowLoading(true);
 
     // optimistic
-    const prev = user.followedByMe;
+    const prev = Boolean(user.followedByMe);
     const next = !prev;
 
     setUser((p) =>
@@ -132,7 +183,10 @@ export function PublicProfile({ userId }: { userId: string }) {
         ? {
           ...p,
           followedByMe: next,
-          followersCount: Math.max(0, (p.followersCount ?? 0) + (next ? 1 : -1)),
+          followersCount: Math.max(
+            0,
+            (p.followersCount ?? 0) + (next ? 1 : -1)
+          ),
         }
         : p
     );
@@ -143,8 +197,11 @@ export function PublicProfile({ userId }: { userId: string }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("follow failed");
-      const data = await res.json();
-      setUser((p) => (p ? { ...p, followedByMe: Boolean(data.followed) } : p));
+      const data = await res.json().catch(() => ({} as any));
+
+      if (typeof data?.followed === "boolean") {
+        setUser((p) => (p ? { ...p, followedByMe: Boolean(data.followed) } : p));
+      }
     } catch {
       setUser((p) => (p ? { ...p, followedByMe: prev } : p));
     } finally {
@@ -152,6 +209,7 @@ export function PublicProfile({ userId }: { userId: string }) {
     }
   };
 
+  // ---------- STATES ----------
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -230,10 +288,26 @@ export function PublicProfile({ userId }: { userId: string }) {
 
               {/* Stats */}
               <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-6 mb-4">
-                <Stat icon={<BookOpen className="size-5 text-blue-600" />} label="Нийтлэл" value={user.postsCount} />
-                <Stat icon={<Heart className="size-5 text-red-600" />} label="Таалагдсан" value={user.totalLikes} />
-                <Stat icon={<Users className="size-5 text-green-600" />} label="Дагагч" value={user.followersCount} />
-                <Stat icon={<Globe className="size-5 text-purple-600" />} label="Улс/Аймаг" value={user.countriesVisited} />
+                <Stat
+                  icon={<BookOpen className="size-5 text-blue-600" />}
+                  label="Нийтлэл"
+                  value={user.postsCount}
+                />
+                <Stat
+                  icon={<Heart className="size-5 text-red-600" />}
+                  label="Таалагдсан"
+                  value={user.totalLikes}
+                />
+                <Stat
+                  icon={<Users className="size-5 text-green-600" />}
+                  label="Дагагч"
+                  value={user.followersCount}
+                />
+                <Stat
+                  icon={<Globe className="size-5 text-purple-600" />}
+                  label="Улс/Аймаг"
+                  value={user.countriesVisited}
+                />
               </div>
 
               {joinDate ? (
@@ -248,10 +322,10 @@ export function PublicProfile({ userId }: { userId: string }) {
 
         {/* Posts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 pb-12">
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-3 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl sm:text-2xl font-bold">
-                Нийтлэлүүд ({posts.length})
+                Нийтлэлүүд ({postsTotal})
               </h2>
               <Link
                 href="/blogs"
@@ -281,11 +355,13 @@ export function PublicProfile({ userId }: { userId: string }) {
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
+
                     <div className="p-4 sm:p-6 sm:w-2/3">
                       <div className="flex flex-wrap items-center gap-2 mb-3">
                         <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">
                           {p.category}
                         </span>
+
                         {p.location?.name ? (
                           <div className="flex items-center gap-1 text-gray-500 text-xs">
                             <MapPin className="size-3" />
@@ -305,7 +381,9 @@ export function PublicProfile({ userId }: { userId: string }) {
                       <div className="flex items-center gap-3 text-xs text-gray-500">
                         <span>{formatDateMN(p.createdAt)}</span>
                         <span>•</span>
-                        <span>{estimateReadTime(p.excerpt)} унших</span>
+                        <span>
+                          {p.readTime ? p.readTime : `${estimateReadTime(p.excerpt)} унших`}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -318,22 +396,21 @@ export function PublicProfile({ userId }: { userId: string }) {
             )}
           </div>
 
-          {/* Sidebar (өөрийн хүссэнээр дараа map нэмнэ) */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold mb-2">Товч</h3>
-              <p className="text-gray-600 text-sm">
-                Энэ хэсэг дээр “Аймгуудын map + pin” хийж болно (дараагийн алхам).
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+function Stat({
+                icon,
+                label,
+                value,
+              }: {
+  icon: ReactNode;
+  label: string;
+  value: number;
+}) {
   return (
     <div className="flex items-center gap-2">
       <div className="p-2 bg-gray-50 rounded-lg">{icon}</div>

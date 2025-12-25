@@ -337,5 +337,73 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+/* =========================================
+   POSTS BY USER (PUBLIC PROFILE)
+   GET /posts/user/:userId?take=20&skip=0
+========================================= */
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const userId = String(req.params.userId || '').trim();
+    if (!userId) return res.status(400).json({ message: 'Invalid user id' });
+
+    const takeRaw = Number(req.query.take ?? 20);
+    const skipRaw = Number(req.query.skip ?? 0);
+
+    const take = Number.isFinite(takeRaw) ? Math.min(Math.max(takeRaw, 1), 50) : 20;
+    const skip = Number.isFinite(skipRaw) ? Math.max(skipRaw, 0) : 0;
+
+    // хэрэглэгч байгаа эсэх (сонголтоор)
+    const userExists = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true },
+    });
+
+    if (!userExists) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const [total, posts] = await Promise.all([
+      prisma.post.count({ where: { authorId: userId } }),
+      prisma.post.findMany({
+        where: { authorId: userId },
+        orderBy: { createdAt: 'desc' },
+        take,
+        skip,
+        include: {
+          author: {
+            select: { name: true, avatar: true },
+          },
+        },
+      }),
+    ]);
+
+    return res.json({
+      userId,
+      total,
+      take,
+      skip,
+      posts: posts.map((p: any) => ({
+        id: p.id,
+        image: p.imageUrl,
+        category: p.category,
+        title: p.title,
+        excerpt: p.excerpt,
+        content: p.content, // хэрэггүй бол устгаж болно
+        createdAt: p.createdAt,
+        readTime: getRelativeTime(p.createdAt),
+
+        author: p.author?.name ?? null,
+        authorAvatar: p.author?.avatar ?? null,
+
+        location: p.location
+          ? { name: p.location, lat: p.lat ?? null, lng: p.lng ?? null }
+          : null,
+      })),
+    });
+  } catch (error) {
+    console.error('FETCH POSTS BY USER ERROR:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
 
 export default router;
