@@ -1,24 +1,32 @@
 "use client";
-import { MapPin, Users, Target, Heart } from "lucide-react";
+
+import { MapPin, Users, Target, Heart, ArrowRight, Sparkles } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import Link from 'next/link';
 
 export function About() {
+  const prefersReducedMotion = useReducedMotion();
+
   const team = [
     {
       name: "Сарантуяа",
       role: "Үүсгэн байгуулагч & Аяллын зохион байгуулагч",
-      image: "https://images.unsplash.com/photo-1585624196654-d78397524a51?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjB0cmF2ZWwlMjBibG9nZ2VyfGVufDF8fHx8MTc2NjM0NzY1OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      image:
+        "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=1200&q=80",
       description: "45 орныг аялсан туршлагатай",
     },
     {
       name: "Батбаяр",
       role: "Гэрэл зурагчин",
-      image: "https://images.unsplash.com/photo-1633457896836-f8d6025c85d1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWFtJTIwbWVldGluZyUyMG9mZmljZXxlbnwxfHx8fDE3NjYzNDc2NTh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      image:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=80",
       description: "10 жил гэрэл зурагчин",
     },
     {
       name: "Оюунчимэг",
       role: "Контент бүтээгч",
-      image: "https://images.unsplash.com/photo-1585624196654-d78397524a51?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjB0cmF2ZWwlMjBibG9nZ2VyfGVufDF8fHx8MTc2NjM0NzY1OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      image:
+        "https://images.unsplash.com/photo-1548142813-c348350df52b?auto=format&fit=crop&w=1200&q=80",
       description: "Соёл, түүх судлаач",
     },
   ];
@@ -30,127 +38,246 @@ export function About() {
     { label: "Гэрэл зураг", value: "5000+" },
   ];
 
+  const features = [
+    {
+      icon: MapPin,
+      title: "Бидний эрхэм зорилго",
+      text: "Хүн бүрт дэлхийн гайхамшгийг харах боломж олгох",
+    },
+    {
+      icon: Target,
+      title: "Бидний зорилт",
+      text: "Үнэн зөв мэдээлэл, туршлагаар хүмүүсийг дэмжих",
+    },
+    {
+      icon: Heart,
+      title: "Бидний үнэт зүйлс",
+      text: "Соёлыг хүндэтгэх, байгаль орчныг хамгаалах",
+    },
+  ];
+
+  const fadeUp = {
+    hidden: { opacity: 0, y: 16 },
+    show: { opacity: 1, y: 0 },
+  };
+
+  const stagger = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.08, delayChildren: 0.08 },
+    },
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="relative h-[400px] flex items-center justify-center overflow-hidden">
-        <img
-          src="https://images.unsplash.com/photo-1642009071428-119813340e22?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBtYXAlMjB3b3JsZHxlbnwxfHx8fDE3NjYzNDc2NTh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-          alt="About us"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="relative z-10 text-center text-white px-4">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl mb-4">Бидний тухай</h1>
-          <p className="text-xl text-gray-200">
-            Дэлхийг хамтдаа нээх аялал
-          </p>
+      {/* HERO */}
+      <section className="relative overflow-hidden">
+        <div className="relative h-[420px] md:h-[520px]">
+          {/* BG image */}
+          <img
+            src="https://images.unsplash.com/photo-1526779259212-939e64788e3c?auto=format&fit=crop&w=1920&q=80"
+            alt="About us"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          {/* overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-white/0" />
+          {/* subtle shapes */}
+          <div className="absolute -top-40 -right-40 size-[520px] rounded-full bg-blue-500/20 blur-3xl" />
+          <div className="absolute -bottom-48 -left-48 size-[520px] rounded-full bg-purple-500/20 blur-3xl" />
+
+          <div className="relative z-10 mx-auto flex h-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={prefersReducedMotion ? false : "hidden"}
+              animate={prefersReducedMotion ? undefined : "show"}
+              variants={stagger}
+              className="max-w-2xl text-white"
+            >
+              <motion.div variants={fadeUp} className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur">
+                <Sparkles className="size-4" />
+                <span>Аяллын түүх, зөвлөмж, бодит туршлага</span>
+              </motion.div>
+
+              <motion.h1
+                variants={fadeUp}
+                className="mt-5 text-4xl font-bold leading-tight md:text-5xl lg:text-6xl"
+              >
+                Бидний тухай
+              </motion.h1>
+
+              <motion.p variants={fadeUp} className="mt-4 text-lg text-gray-200 md:text-xl">
+                “Аялал Нүүдэл” — Дэлхийг хамтдаа нээх аялал.
+              </motion.p>
+
+              <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
+                <a
+                  href="#team"
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-blue-700 font-semibold shadow-lg shadow-black/10 hover:bg-gray-100 transition"
+                >
+                  Багаа танилцах
+                  <ArrowRight className="size-4" />
+                </a>
+                <a
+                  href="#story"
+                  className="inline-flex items-center gap-2 rounded-full bg-white/10 px-6 py-3 text-white font-semibold backdrop-blur hover:bg-white/15 transition"
+                >
+                  Манай түүх
+                </a>
+              </motion.div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Story Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl mb-6">Бидний түүх</h2>
-            <p className="text-lg text-gray-600 leading-relaxed">
-              2018 онд эхэлсэн "Аялал Нүүдэл" бол зөвхөн блог биш, харин аялах 
-              дуртай хүмүүсийн нийгэмлэг юм. Бид дэлхийн өнцөг булан бүрээс 
-              түүх, туршлага хуваалцаж, хүмүүст шинэ газар нээх урам зориг өгдөг.
-            </p>
-          </div>
+      {/* STORY */}
+      <section id="story" className="py-16 md:py-20 bg-white">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView={prefersReducedMotion ? undefined : "show"}
+            viewport={{ once: true, amount: 0.25 }}
+            variants={stagger}
+            className="text-center"
+          >
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-gray-900">
+              Бидний түүх
+            </motion.h2>
+            <motion.p variants={fadeUp} className="mt-5 text-lg text-gray-600 leading-relaxed">
+              2018 онд эхэлсэн “Аялал Нүүдэл” бол зөвхөн блог биш, харин аялах дуртай хүмүүсийн нийгэмлэг юм.
+              Бид дэлхийн өнцөг булан бүрээс түүх, туршлага хуваалцаж, хүмүүст шинэ газар нээх урам зориг өгдөг.
+            </motion.p>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <div className="text-center p-6 bg-blue-50 rounded-xl">
-              <MapPin className="size-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-xl mb-2">Бидний эрхэм зорилго</h3>
-              <p className="text-gray-600">
-                Хүн бүрт дэлхийн гайхамшгийг харах боломж олгох
-              </p>
-            </div>
-
-            <div className="text-center p-6 bg-blue-50 rounded-xl">
-              <Target className="size-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-xl mb-2">Бидний зорилт</h3>
-              <p className="text-gray-600">
-                Үнэн зөв мэдээлэл, туршлагаар хүмүүсийг дэмжих
-              </p>
-            </div>
-
-            <div className="text-center p-6 bg-blue-50 rounded-xl">
-              <Heart className="size-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-xl mb-2">Бидний үнэт зүйлс</h3>
-              <p className="text-gray-600">
-                Соёлыг хүндэтгэх, байгаль орчныг хамгаалах
-              </p>
-            </div>
-          </div>
+          <motion.div
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView={prefersReducedMotion ? undefined : "show"}
+            viewport={{ once: true, amount: 0.25 }}
+            variants={stagger}
+            className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
+            {features.map((f, idx) => {
+              const Icon = f.icon;
+              return (
+                <motion.div
+                  key={idx}
+                  variants={fadeUp}
+                  whileHover={prefersReducedMotion ? undefined : { y: -6 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                  className="group rounded-2xl border border-gray-200 bg-gradient-to-b from-white to-gray-50 p-6 shadow-sm hover:shadow-lg transition"
+                >
+                  <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
+                    <Icon className="size-6" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">{f.title}</h3>
+                  <p className="mt-2 text-gray-600 text-sm leading-relaxed">{f.text}</p>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* STATS */}
       <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView={prefersReducedMotion ? undefined : "show"}
+            viewport={{ once: true, amount: 0.25 }}
+            variants={stagger}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
+          >
             {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-4xl md:text-5xl text-blue-600 mb-2">
+              <motion.div
+                key={index}
+                variants={fadeUp}
+                className="rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm hover:shadow-md transition"
+              >
+                <div className="text-4xl md:text-5xl font-extrabold text-blue-600">
                   {stat.value}
                 </div>
-                <div className="text-gray-600">{stat.label}</div>
-              </div>
+                <div className="mt-2 text-gray-600">{stat.label}</div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Team Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <Users className="size-12 text-blue-600 mx-auto mb-4" />
-            <h2 className="text-3xl md:text-4xl mb-4">Бидний баг</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+      {/* TEAM */}
+      <section id="team" className="py-16 md:py-20 bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView={prefersReducedMotion ? undefined : "show"}
+            viewport={{ once: true, amount: 0.25 }}
+            variants={stagger}
+            className="text-center"
+          >
+            <motion.div variants={fadeUp} className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600">
+              <Users className="size-6" />
+            </motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-gray-900">
+              Бидний баг
+            </motion.h2>
+            <motion.p variants={fadeUp} className="mt-3 text-gray-600 max-w-2xl mx-auto">
               Аялах дуртай, туршлагатай мэргэжилтнүүдийн баг
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <motion.div
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView={prefersReducedMotion ? undefined : "show"}
+            viewport={{ once: true, amount: 0.25 }}
+            variants={stagger}
+            className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
             {team.map((member, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="text-center bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
+                variants={fadeUp}
+                whileHover={prefersReducedMotion ? undefined : { y: -8 }}
+                transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-xl transition"
               >
-                <div className="aspect-square overflow-hidden">
+                <div className="relative aspect-[4/4] overflow-hidden">
                   <img
                     src={member.image}
                     alt={member.name}
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <div className="p-6">
-                  <h3 className="text-xl mb-2">{member.name}</h3>
-                  <p className="text-blue-600 mb-2">{member.role}</p>
-                  <p className="text-gray-600 text-sm">{member.description}</p>
+
+                <div className="p-6 text-center">
+                  <h3 className="text-xl font-semibold text-gray-900">{member.name}</h3>
+                  <p className="mt-1 text-blue-600 font-medium">{member.role}</p>
+                  <p className="mt-2 text-gray-600 text-sm">{member.description}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-blue-600 text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl mb-4">
-            Бидэнтэй нэгдээрэй!
-          </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Сар бүр шинэ аяллын түүх, зөвлөмж авахыг хүсвэл бидэнтэй холбогдоорой
-          </p>
-          <button className="px-8 py-3 bg-white text-blue-600 rounded-full hover:bg-gray-100 transition-colors">
-            И-мэйл бүртгүүлэх
-          </button>
+      {/* CTA */}
+      <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+            whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Бидэнтэй нэгдээрэй!</h2>
+            <p className="text-xl text-blue-100 mb-8">
+              Сар бүр шинэ аяллын түүх, зөвлөмж авахыг хүсвэл бидэнтэй холбогдоорой
+            </p>
+
+            <Link  className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3 text-blue-700 font-semibold hover:bg-gray-100 transition shadow-lg shadow-black/10" href='/register'>
+              И-мэйл бүртгүүлэх
+              <ArrowRight className="size-4" />
+            </Link>
+          </motion.div>
         </div>
       </section>
     </div>
